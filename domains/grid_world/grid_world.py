@@ -89,14 +89,15 @@ while True:
         for col in range(GRID_WIDTH):
             pygame.draw.rect(screen, PLAYER_COLOR, (col * GRID_SIZE, row * GRID_SIZE, GRID_SIZE, GRID_SIZE), 1)
 
+        # Draw the key based on if the player have collided with it or not
+        if got_key == False:
+            pygame.draw.rect(screen, KEY_COLOR, (key_pos[0] * GRID_SIZE, key_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+        elif got_key == True:
+            pygame.draw.rect(screen, GROUND_COLOR,
+                             (key_pos[0] * GRID_SIZE, key_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+
     # Draw the player
     pygame.draw.rect(screen, PLAYER_COLOR, (player_pos[0] * GRID_SIZE, player_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
-
-    # Draw the key based on if the player have collided with it or not
-    if got_key == False:
-        pygame.draw.rect(screen, KEY_COLOR, (key_pos[0] * GRID_SIZE, key_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
-    elif got_key == True:
-        pygame.draw.rect(screen, GROUND_COLOR, (key_pos[0] * GRID_SIZE, key_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
 
 
     #Draw the chest
