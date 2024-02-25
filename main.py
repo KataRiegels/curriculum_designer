@@ -13,14 +13,15 @@ import threading
 
 stop_event = threading.Event()
 
-feature_vector = Features(GridSize(), TestFeat())
+feature_vector = Features(GridSize(), Hole(exists = True))
 mdp = MDP(features = feature_vector, run_with_print=True)
 new_mdp = task_simplification(mdp)
 key_pos = [1, 1]
 chest_pos = [5, 7]
 
-def run_mdp(new_mdp):
-    while True: 
+def run_mdp(new_mdp, stop_event):
+    while not stop_event.is_set():
+
         time.sleep(1)
         print("something")
         action = new_mdp.agent.take_action()
@@ -31,8 +32,8 @@ def run_mdp(new_mdp):
 # start_game_mdp(new_mdp, key_pos, chest_pos)
 
 # Create threads for Pygame loop and MDP loop
-pygame_thread = threading.Thread(target=start_game_mdp, args=(new_mdp, key_pos, chest_pos,))
-mdp_thread = threading.Thread(target=run_mdp, args=(new_mdp,))
+pygame_thread = threading.Thread(target=start_game_mdp, args=(new_mdp, key_pos, chest_pos, stop_event,))
+mdp_thread = threading.Thread(target=run_mdp, args=(new_mdp,stop_event))
 
 # Start both threads
 pygame_thread.start()

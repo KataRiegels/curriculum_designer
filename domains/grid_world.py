@@ -45,7 +45,7 @@ def reset_player():
     generation_counter += 1
     print(generation_counter)
 
-def start_game_mdp(mdp : MDP, key_position, chest_position):
+def start_game_mdp(mdp : MDP, key_position, chest_position, stop_event):
     
     
     got_key = False
@@ -53,6 +53,8 @@ def start_game_mdp(mdp : MDP, key_position, chest_position):
     
     key_pos = key_position
     chest_pos = chest_position
+    hole_pos = mdp.features[Hole().get_feature_name()].hole_coordinates
+    beam_pos = mdp.features[Hole().get_feature_name()].beam_coordinates
     GRID_WIDTH = mdp.grid_size.width
     GRID_HEIGHT = mdp.grid_size.height
     
@@ -63,9 +65,10 @@ def start_game_mdp(mdp : MDP, key_position, chest_position):
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Grid_world")
     
-    while True:
+    while not stop_event.is_set():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                stop_event.set()
                 pygame.quit()
                 sys.exit()
                 
@@ -81,8 +84,8 @@ def start_game_mdp(mdp : MDP, key_position, chest_position):
             exit()
 
     #Checks collision with player and cacti
-        for cacti in cactus_pos:
-            if player_pos == cacti:
+        for beam in cactus_pos:
+            if player_pos == beam:
                 reset_player()
 
 
@@ -114,8 +117,8 @@ def start_game_mdp(mdp : MDP, key_position, chest_position):
         pygame.draw.rect(screen, CHEST_COLOR, (chest_pos[0] * GRID_SIZE, chest_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
 
         #Draw the cacti
-        for cacti in cactus_pos:
-            pygame.draw.rect(screen, CACTUS_COLOR, (cacti[0] * GRID_SIZE, cacti[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+        for beam in beam_pos:
+            pygame.draw.rect(screen, CACTUS_COLOR, (beam[0] * GRID_SIZE, beam[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
 
         #Draw the hole
         for hole in hole_pos:
