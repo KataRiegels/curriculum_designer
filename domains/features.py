@@ -108,8 +108,10 @@ class Hole(Feature):
             return
         else: 
             self.width = randint
+            self.update_hole()
+            
             # self.set_hole_position()
-        pass
+        return self
     
     
     
@@ -137,17 +139,26 @@ class Hole(Feature):
         x = math.ceil(grid_width/2)
         y = math.ceil(grid_height/2)
         self.position = (x,y)
-        lower_bound_x = x - math.floor(self.width/2) - 1
-        upper_bound_x = x + math.floor(self.width/2)- 1
+        self.update_hole()
+        
+    def update_hole(self):
+        if not self.exists: return
+        
+        x = self.position[0]
+        y = self.position[1]
+        self.lower_bound_x = x - math.floor(self.width/2) - 1
+        self.upper_bound_x = x + math.floor(self.width/2)- 1
         if self.width % 2 == 0: # even
-            upper_bound_x += 1
-        lower_bound_y = y - math.floor(self.height/2) - 1
-        upper_bound_y = y + math.floor(self.height/2)- 1
+            self.upper_bound_x += 1
+            self.lower_bound_x -= 1
+        self.lower_bound_y = y - math.floor(self.height/2) - 1
+        self.upper_bound_y = y + math.floor(self.height/2)- 1
         if self.height % 2 == 0: # even
-            upper_bound_y += 1
+            self.lower_bound_y -= 1
+            self.upper_bound_y += 1
             
-        x_values = range(lower_bound_x, upper_bound_x + 1)  # Adjust start_x and end_x accordingly
-        y_values = range(lower_bound_y, upper_bound_y + 1)  # Adjust start_y and end_y accordingly
+        x_values = range(self.lower_bound_x, self.upper_bound_x + 1)  # Adjust start_x and end_x accordingly
+        y_values = range(self.lower_bound_y, self.upper_bound_y + 1)  # Adjust start_y and end_y accordingly
 
         hole_coordinates = []
 
@@ -159,10 +170,10 @@ class Hole(Feature):
         self.hole_coordinates = hole_coordinates
         
         beam_coordinates = [
-            [lower_bound_x - 1, lower_bound_y - 1],
-            [upper_bound_x + 1, lower_bound_y - 1],
-            [lower_bound_x - 1, upper_bound_y + 1],
-            [upper_bound_x + 1, upper_bound_y + 1]
+            [self.lower_bound_x - 1, self.lower_bound_y - 1],
+            [self.upper_bound_x + 1, self.lower_bound_y - 1],
+            [self.lower_bound_x - 1, self.upper_bound_y + 1],
+            [self.upper_bound_x + 1, self.upper_bound_y + 1]
         ]   
         
         self.beam_coordinates = beam_coordinates
