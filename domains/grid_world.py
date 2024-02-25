@@ -1,6 +1,7 @@
+from __future__ import annotations
 import pygame
 import sys
-
+from mdp import *
 # Initialize Pygame
 pygame.init()
 
@@ -44,6 +45,90 @@ def reset_player():
     generation_counter += 1
     print(generation_counter)
 
+def start_game_mdp(mdp : MDP, key_position, chest_position):
+    
+    
+    got_key = False
+    player_pos = [mdp.init_state.x, mdp.init_state.y]
+    
+    key_pos = key_position
+    chest_pos = chest_position
+    GRID_WIDTH = mdp.grid_size.width
+    GRID_HEIGHT = mdp.grid_size.height
+    
+    
+    SCREEN_WIDTH = GRID_WIDTH * GRID_SIZE
+    SCREEN_HEIGHT = GRID_HEIGHT * GRID_SIZE
+
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Grid_world")
+    
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+                
+        player_pos[0], player_pos[1] = mdp.agent.state.x, mdp.agent.state.y
+                
+                
+        #Checks collision of player and key
+        if player_pos == key_pos:
+            got_key = True
+
+    #Checks collision of player and chest, and if the player have colided with the key or not
+        if (player_pos == chest_pos) and (got_key == True):
+            exit()
+
+    #Checks collision with player and cacti
+        for cacti in cactus_pos:
+            if player_pos == cacti:
+                reset_player()
+
+
+
+    #Checks collision with player and hole
+        for hole in hole_pos:
+            if player_pos == hole:
+                reset_player()
+
+
+        # Draw the grid
+        screen.fill(GROUND_COLOR)
+        for row in range(GRID_HEIGHT):
+            for col in range(GRID_WIDTH):
+                pygame.draw.rect(screen, PLAYER_COLOR, (col * GRID_SIZE, row * GRID_SIZE, GRID_SIZE, GRID_SIZE), 1)
+
+            # Draw the key based on if the player have collided with it or not
+            if got_key == False:
+                pygame.draw.rect(screen, KEY_COLOR, (key_pos[0] * GRID_SIZE, key_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+            elif got_key == True:
+                pygame.draw.rect(screen, GROUND_COLOR,
+                                (key_pos[0] * GRID_SIZE, key_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+
+        # Draw the player
+        pygame.draw.rect(screen, PLAYER_COLOR, (player_pos[0] * GRID_SIZE, player_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+
+
+        #Draw the chest
+        pygame.draw.rect(screen, CHEST_COLOR, (chest_pos[0] * GRID_SIZE, chest_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+
+        #Draw the cacti
+        for cacti in cactus_pos:
+            pygame.draw.rect(screen, CACTUS_COLOR, (cacti[0] * GRID_SIZE, cacti[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+
+        #Draw the hole
+        for hole in hole_pos:
+            pygame.draw.rect(screen, HOLE_COLOR, (hole[0] * GRID_SIZE, hole[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+
+        # Update the display
+        pygame.display.flip()
+
+        # Control the game speed
+        pygame.time.Clock().tick(10)
+
+    
+
 
 def start_game(grid_height, grid_width, player_position, key_position, chest_position):
     global player_pos, x, y, got_key
@@ -76,7 +161,9 @@ def start_game(grid_height, grid_width, player_position, key_position, chest_pos
                     player_pos[1] -= 1
                 elif event.key == pygame.K_DOWN and player_pos[1] < GRID_HEIGHT - 1:
                     player_pos[1] += 1
-
+        
+        
+                        
     #Checks collision of player and key
         if player_pos == key_pos:
             got_key = True

@@ -29,6 +29,7 @@ class Agent():
         return act 
  
 class MDP(list):
+    """ Class that represents an episodic Markov Decision Process, aka "task" """
     S = []          # set of states
     A = []          # set of actions
     P = None        # transition function that gives the probability of moving to a new state
@@ -43,6 +44,7 @@ class MDP(list):
     
     
     def __init__(self, init_state = None, features : Features = None, run_with_print = False):
+        self.agent = Agent()
         if init_state == None:
             self.init_state = State()
         else:
@@ -55,9 +57,11 @@ class MDP(list):
             self.features = [self.grid_size, self.test_feat]
         else: 
             self.features = features
+            if run_with_print:
+                self.features.run_with_print = True
     
-    """ Transition function """
     def P(self, state : State, action : str) -> list[tuple[State, float]] :# transition function
+        """ Transition function """
         sa        = SA(state, action)
         new_state = state.copy()
         
@@ -77,8 +81,8 @@ class MDP(list):
     def transition(self, state : State, action : str):
         return self.P(state, action)
 
-    """ Reward function """
     def R(self, state : State, action : str) -> float:
+        """ Reward function """
         sa        = SA(state, action)
         new_state = state.copy()
         
@@ -109,8 +113,8 @@ class SA():
         self.action = action
 
 
-    """ Returns a new state from movement - checks mdp boundaries """
     def move(self, mdp : MDP) -> State:
+        """ Returns a new state from movement - checks mdp boundaries """
         new_state = self.state.copy()
         # Left
         if self.action == "left" or self.action ==  3:
