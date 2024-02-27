@@ -1,9 +1,11 @@
 import sys
 import os
 path = os.path.abspath("domains")
+# path = os.path.abspath("algorithm")
 sys.path.append(path)
 # from ..domains.M import *
 print("--SCRIPT STARTING")
+from algorithm.q_learning import *
 from domains.features import *
 from domains.mdp import *
 from domains.task_generators import *
@@ -18,13 +20,18 @@ mdp = MDP(features = feature_vector, run_with_print=True)
 new_mdp = task_simplification(mdp)
 key_pos = [1, 1]
 chest_pos = [5, 7]
+q_agent = QLearningAgent(2, 4, 0.1, 0.9, 0.1)
 
 def run_mdp(new_mdp, stop_event):
     while not stop_event.is_set():
 
-        time.sleep(1)
-        print("something")
-        action = new_mdp.agent.take_action()
+        # time.sleep(1)
+        
+        
+        current_state = tuple([new_mdp.agent.state.x, new_mdp.agent.state.y])
+        action = q_agent.choose_action(tuple(current_state))
+
+        # action = new_mdp.agent.take_action()
         new_mdp.P(new_mdp.agent.state, action)
 
         print(new_mdp.state)
