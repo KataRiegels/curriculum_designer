@@ -51,7 +51,6 @@ class Features(dict):
             else: possible_features.pop(random_feature.get_feature_name())
         
         simplified_feat = random_feature.get_simplified()
-        print(f' Simplified feat is: {simplified_feat}')
         self.modify_feature(new_feature = simplified_feat)
         
         
@@ -108,11 +107,8 @@ class Hole(Feature):
     
     def get_simplified(self) -> Feature:
         randint = rand.randint(0,self.width - 1)
-        print(f'Randint is {randint}')
-        print(f'self.width is {self.width}')
         if randint == 0:
             self.exists = False
-            print(f'REMOVED HOLE?!')
             return self
         else: 
             self.width = randint
@@ -202,7 +198,6 @@ class Hole(Feature):
         ]   
         
         self.beam_coordinates = beam_coordinates
-        print(f'beam coordinates: {beam_coordinates}')
     # A magic methods to be able to make use of the concept of Rng(F_i)
     def __lt__(self, other : Hole):
         if other.exists and not self.exists: return True

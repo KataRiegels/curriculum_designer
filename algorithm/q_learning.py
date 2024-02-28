@@ -3,8 +3,11 @@ import numpy as np
 
 
 class QLearningAgent:
-    def __init__(self, max_training_episodes, max_steps, state_space_size, action_space_size, learning_rate, discount_factor, exploration_rate):
-        self.q_values = {}
+    def __init__(self, max_training_episodes, max_steps, state_space_size, action_space_size, learning_rate, discount_factor, exploration_rate, previous_q_values = None):
+        if previous_q_values == None:
+            self.q_values = {}
+        else: 
+            self.q_values = previous_q_values
         self.max_training_episodes = max_training_episodes
         self.max_steps = max_steps
         self.state_space_size = state_space_size

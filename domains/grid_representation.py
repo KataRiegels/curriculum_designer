@@ -31,9 +31,19 @@ class Grid():
     
     size = None
     hole = []
+    hole_cells = []
     beams = []
+    beams_cells = []
     key = []
+    key_cells = []
     lock = None
+    lock_cells = []
+    objects_dict = {
+        "hole" : [],
+        "beams" : [],
+        "key" : [],
+        "lock" : [],
+    }
     
     def __init__(self, size = (10,10)):
         self.size = size
@@ -53,9 +63,11 @@ class Grid():
         cell = self.get_cell(cell[0], cell[1])
         if cell:
             cell.value = cell_type
+            self.objects_dict[cell_type].append(cell)
+            
     
     def check_coordinate(self, coordinate):
-        
+        return self.get_cell(coordinate[0], coordinate[1]).value
         pass
 
     def build_grid(self):
@@ -66,6 +78,38 @@ class Grid():
         object.create(self)
         for coordinate in object.coordinates:
             self.assign_cell(cell = (coordinate[0], coordinate[1]), cell_type = object.value)
+ 
+    def distance_to_nearest(self, agent, sensor_type):
+        if sensor_type not in ["hole", "beams", "key", "lock"]:
+            raise ValueError(f"Invalid sensor_type: {sensor_type}")
+
+        agent_x, agent_y = agent
+        min_distance = float('inf')
+
+        for cell in self.objects_dict[sensor_type]:
+            distance = math.sqrt((cell.x - agent_x)**2 + (cell.y - agent_y)**2)
+            min_distance = min(min_distance, distance)
+            
+        
+        # for x in range(self.width):
+        #     for y in range(self.height):
+        #         cell_value = self.get_cell(x, y).value
+        #         if cell_value == sensor_type:
+        #             distance = math.sqrt((x - agent_x)**2 + (y - agent_y)**2)
+        #             min_distance = min(min_distance, distance)
+
+        return min_distance
+ 
+    def is_hole_adjacent(self, coordinate):
+        x, y = coordinate
+        adjacent_coordinates = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+
+        for adj_x, adj_y in adjacent_coordinates:
+            if 0 <= adj_x < self.width and 0 <= adj_y < self.height:
+                if self.get_cell(adj_x, adj_y).value == "hole":
+                    return True
+
+        return False
  
     @property
     def width(self):
@@ -227,7 +271,7 @@ class HoleObj2():
 
 class BeamsObj():
     
-    value = "beam"
+    value = "beams"
     
     def __init__(self, hole = None):
         self.hole = hole
@@ -265,6 +309,7 @@ class KeyObj():
     def calculate_coordinates(self, grid : Grid = None):
         if grid.height > 1:
             self.coordinate[1] = grid.height - 2
+            # self.coordinate[1] =  1
         else:
             self.coordinate[1] = 0
         if grid.width > 1:

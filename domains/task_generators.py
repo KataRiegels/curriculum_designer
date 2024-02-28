@@ -24,7 +24,6 @@ def task_simplification(mdp : MDP):
     """
     mdp_features.simplify_random_feature()
     new_mdp = MDP(features = mdp_features)
-    print(new_mdp)
     return new_mdp
     pass
 
