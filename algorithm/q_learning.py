@@ -28,10 +28,14 @@ class QLearningAgent:
     def choose_action(self, state):
         # Epsilon-greedy policy for action selection
         if random.uniform(0, 1) < self.exploration_rate:
-            return random.choice(range(self.action_space_size))
+            action = random.choice(range(self.action_space_size))
+            return action
+            
         else:
             state_tuple = tuple(state)
             # Choose the action with the highest Q-value
+            q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
+            print("Q-values: ", q_values)  # Add this line for debugging
+            self.exploration_rate -= 0.0000001
             return max(range(self.action_space_size), key=lambda a: self.get_q_value(state, a))
-        self.exploration_rate -= 0.0000001
         #print(self.exploration_rate)

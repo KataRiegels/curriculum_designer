@@ -183,6 +183,17 @@ class PygameInstance():
             number_text = font.render(str(self.information_parser["keys"]), True, self.KEY_COLOR)
             screen.blit(number_text, (SCREEN_WIDTH - 150, 10))
             
+            number_text = font.render("up" + str(self.information_parser["action log"]["up"]), True, (200, 0, 170))
+            screen.blit(number_text, (SCREEN_WIDTH - 100, 110))
+            number_text = font.render("down" + str(self.information_parser["action log"]["down"]), True, (200, 0, 170))
+            screen.blit(number_text, (SCREEN_WIDTH - 100, 160))
+            number_text = font.render("left" + str(self.information_parser["action log"]["left"]), True, (200, 0, 170))
+            screen.blit(number_text, (SCREEN_WIDTH - 100, 210))
+            number_text = font.render("right" + str(self.information_parser["action log"]["right"]), True, (200, 0, 170))
+            screen.blit(number_text, (SCREEN_WIDTH - 100, 260))
+            
+            
+            
             # Update the display
             pygame.display.flip()
 

@@ -41,8 +41,9 @@ class State():
 class Agent():
     pass
 
-    def __init__(self):
-        self.state = State()
+    def __init__(self, state : State = None):
+        if state != None: self.state = state
+        else: self.state = State()
 
     def update_sensors(self, grid : Grid):
         
@@ -103,7 +104,7 @@ class MDP(list):
         return MDP(init_state = self.init_state, features = self.features, run_with_print = self.run_with_print)
     
     def __init__(self, init_state = None, features : Features = None, run_with_print = False):
-        self.agent = Agent()
+        self.agent = Agent(State(1,7))
         self.mdp_ended = False
         # initial state
         if init_state == None:
@@ -202,7 +203,7 @@ class MDP(list):
         else:
             reward = -10
             
-        
+        reward = 0
         
         # reward at new_pos
         # reward = 0

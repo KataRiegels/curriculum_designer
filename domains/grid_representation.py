@@ -63,9 +63,16 @@ class Grid():
         cell = self.get_cell(cell[0], cell[1])
         if cell:
             cell.value = cell_type
-            self.objects_dict[cell_type].append(cell)
-            
+            if cell.value != None:
+                self.objects_dict[cell_type].append(cell)
+            else:
+                self.neutralize_cell(cell)
     
+    def neutralize_cell(self, cell):
+        if cell.value is not None:
+            self.objects_dict[cell.value].remove(cell)
+        cell.value = None
+                
     def check_coordinate(self, coordinate):
         return self.get_cell(coordinate[0], coordinate[1]).value
         pass

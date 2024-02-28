@@ -23,7 +23,7 @@ reset_event = threading.Event()
 feature_vector = Features(GridSize(), Hole(exists = True))
 old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
-q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.4)
+q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.8)
 
 use_pg = True
 
@@ -53,7 +53,15 @@ class Tracker():
         self.information_parser["successes"] = 0
         self.information_parser["keys"] = 0
         
+        self.actions_logger = {
+            "up" : 0,
+            "right" : 0,
+            "down" : 0,
+            "left" : 0,
+        }
+        self.information_parser["action log"] = self.actions_logger
         
+        self.q_values_log = None
         self.q_values_log_path = "q_values_log.npy"
         if load_q:
             q_values = self.load_q_values_log()
@@ -90,11 +98,24 @@ class Tracker():
         
         while not self.stop_event.is_set():
 
-            # time.sleep(.1)
+            time.sleep(.1)
             
             current_state = self.mdp.agent.state.copy()
             current_position = self.mdp.agent.state.coordinate
+            
+            
             action = self.q_agent.choose_action(current_position)
+            if action == 0:
+                self.actions_logger['up'] += 1
+            elif action == 1:  
+                self.actions_logger['right'] += 1
+            elif action == 2:  
+                self.actions_logger['down'] += 1
+            elif action == 3:  
+                self.actions_logger['left'] += 1
+            
+            
+            
             new_state = self.mdp.agent.state
             
             old_q_value = self.q_agent.get_q_value(current_position, action)
@@ -117,12 +138,13 @@ class Tracker():
                 self.information_parser['gen'] = self.generation
                 self.information_parser['interactions'] = self.mdp.interaction_number
                 self.information_parser['term'] = self.mdp.term_cause
+                self.information_parser['action log'] = self.actions_logger
                 if self.mdp.agent.state.key_found: self.information_parser['keys'] += 1
                 
                 if self.mdp.term_cause == "hole":
                     self.information_parser['fails'] += 1
                 else:
-                    self.information_parser['term'] += 1
+                    self.information_parser['successes'] += 1
                 
                 
                 print(f'Generation information:\
