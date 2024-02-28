@@ -3,8 +3,10 @@ import numpy as np
 
 
 class QLearningAgent:
-    def __init__(self, state_space_size, action_space_size, learning_rate, discount_factor, exploration_rate):
+    def __init__(self, max_training_episodes, max_steps, state_space_size, action_space_size, learning_rate, discount_factor, exploration_rate):
         self.q_values = {}
+        self.max_training_episodes = max_training_episodes
+        self.max_steps = max_steps
         self.state_space_size = state_space_size
         self.action_space_size = action_space_size
         self.learning_rate = learning_rate
@@ -13,6 +15,7 @@ class QLearningAgent:
 
     def get_q_value(self, state, action):
         # Retrieve Q-value from the Q-table
+        #print(self.q_values)
         return self.q_values.get((state, action), 0.0)
 
     def update_q_value(self, state, action, new_value):
@@ -27,3 +30,5 @@ class QLearningAgent:
             state_tuple = tuple(state)
             # Choose the action with the highest Q-value
             return max(range(self.action_space_size), key=lambda a: self.get_q_value(state, a))
+        self.exploration_rate -= 0.0000001
+        #print(self.exploration_rate)
