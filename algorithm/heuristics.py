@@ -5,6 +5,7 @@
 # R = Reward function
 
 def TaskSimplification(M, X, D, F, T):
+    pass
 #    F0 = Simplify(F)
 #    M0 = T(D, F0)
 #    return M0

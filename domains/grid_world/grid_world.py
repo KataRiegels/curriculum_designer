@@ -1,118 +1,157 @@
+import random
+
 import pygame
 import sys
 
-# Initialize Pygame
-pygame.init()
+class Grid_World:
+    def __init__(self, grid_width, grid_height, player_position_x, player_position_y, key_position, chest_position, cactus_positions, hole_positions, max_steps):
+        pygame.init()
 
-# Constants
-GRID_SIZE = 50
-GRID_WIDTH = 10
-GRID_HEIGHT = 10
-SCREEN_WIDTH = GRID_WIDTH * GRID_SIZE
-SCREEN_HEIGHT = GRID_HEIGHT * GRID_SIZE
+        self.GRID_SIZE = 50
+        self.GROUND_COLOR = (255, 255, 255)
+        self.PLAYER_COLOR = (255, 0, 0)
+        self.KEY_COLOR = (255, 255, 0)
+        self.CHEST_COLOR = (0, 255, 255)
+        self.CACTUS_COLOR = (0, 255, 0)
+        self.HOLE_COLOR = (0, 0, 0)
 
-# Colors
-GROUND_COLOR = (255, 255, 255)
-PLAYER_COLOR = (255, 0, 0)
-KEY_COLOR = (255, 255, 0)
-CHEST_COLOR = (0, 255, 255)
-CACTUS_COLOR = (0, 255, 0)
-HOLE_COLOR = (0, 0, 0)
+        self.generation_counter = 1
+        self.got_key = False
 
+        self.player_pos = [player_position_x, player_position_y]
+        #saving the initial position of the player, and making it global so we can access it from functions
+        global initial_pos
+        initial_pos = [player_position_x, player_position_y]
 
-generation_counter = 1
+        self.key_pos = key_position
+        self.chest_pos = chest_position
+        self.cactus_pos = cactus_positions
+        self.hole_pos = hole_positions
 
-# Initialize the screen
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Grid Game")
+        self.GRID_WIDTH = grid_width
+        self.GRID_HEIGHT = grid_height
+        self.SCREEN_WIDTH = self.GRID_WIDTH * self.GRID_SIZE
+        self.SCREEN_HEIGHT = self.GRID_HEIGHT * self.GRID_SIZE
 
-# Initialize positions
-player_pos = [4,1]
-key_pos = [1, 1]
-chest_pos = [5, 7]
-cactus_pos = [1, 3], [1, 5], [8, 3], [8, 5]
-hole_pos = [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4]
+        self.max_steps = max_steps
+        self.current_steps = 0
+        self.accumulated_reward = 0
 
-got_key = False
+        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+        pygame.display.set_caption("Grid_world")
 
-#Reset function called on generation restart
-def reset_player():
-    global player_pos
-    player_pos = [4, 1]
+    def reset_player(self):
+        self.player_pos = [initial_pos[0], initial_pos[1]]
+        self.got_key = False
+        #print(self.accumulated_reward)
+        self.accumulated_reward = 0
 
-    global got_key
-    got_key = False
+        self.generation_counter += 1
+        self.current_steps = 0
+        if self.generation_counter % 100 == 0:
+            print(self.generation_counter)
 
-    global generation_counter
-    generation_counter += 1
-    print(generation_counter)
+    def check_max_steps(self):
+        if self.current_steps >= self.max_steps:
+            #print("Max steps reached. Resetting player")
+            self.reset_player()
 
+    def check_collisions(self):
+        if self.player_pos == self.key_pos:
+            self.got_key = True
 
-# Game loop
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        elif event.type == pygame.KEYDOWN:
-            # Move the player based on arrow keys
-            if event.key == pygame.K_LEFT and player_pos[0] > 0:
-                player_pos[0] -= 1
-            elif event.key == pygame.K_RIGHT and player_pos[0] < GRID_WIDTH - 1:
-                player_pos[0] += 1
-            elif event.key == pygame.K_UP and player_pos[1] > 0:
-                player_pos[1] -= 1
-            elif event.key == pygame.K_DOWN and player_pos[1] < GRID_HEIGHT - 1:
-                player_pos[1] += 1
+        if (self.player_pos == self.chest_pos) and (self.got_key == True):
+            print("success")
+            #exit()
+            print(self.generation_counter)
+            self.reset_player()
 
-#Checks collision of player and key
-    if player_pos == key_pos:
-        got_key = True
+        for cacti in self.cactus_pos:
+            if self.player_pos == cacti:
+                self.reset_player()
 
-#Checks collision of player and chest, and if the player have colided with the key or not
-    if (player_pos == chest_pos) and (got_key == True):
-        exit()
+        for hole in self.hole_pos:
+            if self.player_pos == hole:
+                self.reset_player()
 
-#Checks collision with player and cacti
-    for cacti in cactus_pos:
-        if player_pos == cacti:
-            reset_player()
+    def move(self, action):
 
-#Checks collision with player and hole
-    for hole in hole_pos:
-        if player_pos == hole:
-            reset_player()
+        #random movement based on the action space
+        #action = random.randint(0, 3)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        if action == 0 and self.player_pos[0] > 0:
+            self.player_pos[0] -= 1
+        elif action == 1 and self.player_pos[0] < self.GRID_WIDTH - 1:
+            self.player_pos[0] += 1
+        elif action == 2 and self.player_pos[1] > 0:
+            self.player_pos[1] -= 1
+            #self.calculate_reward(tuple(initial_pos), action, tuple(self.player_pos))
+        elif action == 3 and self.player_pos[1] < self.GRID_HEIGHT - 1:
+            self.player_pos[1] += 1
+        self.current_steps += 1
 
-    # Draw the grid
-    screen.fill(GROUND_COLOR)
-    for row in range(GRID_HEIGHT):
-        for col in range(GRID_WIDTH):
-            pygame.draw.rect(screen, PLAYER_COLOR, (col * GRID_SIZE, row * GRID_SIZE, GRID_SIZE, GRID_SIZE), 1)
+            #self.calculate_reward(tuple(initial_pos), action, tuple(self.player_pos))
+        #print(self.accumulated_reward)
 
-        # Draw the key based on if the player have collided with it or not
-        if got_key == False:
-            pygame.draw.rect(screen, KEY_COLOR, (key_pos[0] * GRID_SIZE, key_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
-        elif got_key == True:
-            pygame.draw.rect(screen, GROUND_COLOR,
-                             (key_pos[0] * GRID_SIZE, key_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+#Only next_state is used when calculating reward
+    def calculate_reward(self, state, action, next_state):
+         # Assuming state and next_state are tuples representing (x, y) coordinates
 
-    # Draw the player
-    pygame.draw.rect(screen, PLAYER_COLOR, (player_pos[0] * GRID_SIZE, player_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+         # Check if the agent hits a hole or cactus
+         if next_state in self.hole_pos or next_state in self.cactus_pos:
+             reward = -10
+         # Check if the agent hits the key
+         elif next_state == self.key_pos and self.got_key == False:
+             reward = 100
+         # Check if the agent hits the chest after hitting the key
+         elif self.got_key and next_state == self.chest_pos:
+             reward = 100
+         #
+         # # Default reward for other cases
+         else:
+             reward = -0.1
 
+         self.accumulated_reward += reward
+         #print(self.accumulated_reward)
 
-    #Draw the chest
-    pygame.draw.rect(screen, CHEST_COLOR, (chest_pos[0] * GRID_SIZE, chest_pos[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+         return self.accumulated_reward
 
-    #Draw the cacti
-    for cacti in cactus_pos:
-        pygame.draw.rect(screen, CACTUS_COLOR, (cacti[0] * GRID_SIZE, cacti[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+    def render(self):
+        #Checks if the max number of steps have been reached
+        self.check_max_steps()
+        for row in range(self.GRID_HEIGHT):
+            for col in range(self.GRID_WIDTH):
+                pygame.draw.rect(self.screen, self.PLAYER_COLOR,
+                                 (col * self.GRID_SIZE, row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE), 1)
 
-    #Draw the hole
-    for hole in hole_pos:
-        pygame.draw.rect(screen, HOLE_COLOR, (hole[0] * GRID_SIZE, hole[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+            if self.got_key == False:
+                pygame.draw.rect(self.screen, self.KEY_COLOR,
+                                 (self.key_pos[0] * self.GRID_SIZE, self.key_pos[1] * self.GRID_SIZE,
+                                  self.GRID_SIZE, self.GRID_SIZE))
+            elif self.got_key == True:
+                pygame.draw.rect(self.screen, self.GROUND_COLOR,
+                                 (self.key_pos[0] * self.GRID_SIZE, self.key_pos[1] * self.GRID_SIZE,
+                                  self.GRID_SIZE, self.GRID_SIZE))
 
-    # Update the display
-    pygame.display.flip()
+        pygame.draw.rect(self.screen, self.PLAYER_COLOR,
+                         (self.player_pos[0] * self.GRID_SIZE, self.player_pos[1] * self.GRID_SIZE,
+                          self.GRID_SIZE, self.GRID_SIZE))
 
-    # Control the game speed
-    pygame.time.Clock().tick(10)
+        pygame.draw.rect(self.screen, self.CHEST_COLOR,
+                         (self.chest_pos[0] * self.GRID_SIZE, self.chest_pos[1] * self.GRID_SIZE,
+                          self.GRID_SIZE, self.GRID_SIZE))
+
+        for cacti in self.cactus_pos:
+            pygame.draw.rect(self.screen, self.CACTUS_COLOR,
+                             (cacti[0] * self.GRID_SIZE, cacti[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
+
+        for hole in self.hole_pos:
+            pygame.draw.rect(self.screen, self.HOLE_COLOR,
+                             (hole[0] * self.GRID_SIZE, hole[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
+
+        pygame.display.flip()
+        pygame.time.Clock().tick()
+
