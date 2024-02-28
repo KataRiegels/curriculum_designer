@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 # from agent import Agent
+from grid_representation import *
 from features import *
 import random as rand
 
@@ -45,20 +46,37 @@ class MDP(list):
     
     def __init__(self, init_state = None, features : Features = None, run_with_print = False):
         self.agent = Agent()
+        
+        # initial state
         if init_state == None:
             self.init_state = State()
         else:
             self.init_state = init_state
         self.run_with_print = run_with_print    
-            
+        
+        # connect a Grid to the mdp
+        self.grid = Grid()
+        
+        # features
         self.grid_size = features[GridSize().get_feature_name()]
         self.test_feat = TestFeat()
         if features == None:
             self.features = [self.grid_size, self.test_feat]
         else: 
             self.features = features
+            self.features.mdp = self
             if run_with_print:
                 self.features.run_with_print = True
+        self.attach_features()
+    
+    def attach_features(self):
+        self.grid.size = (self.grid_size.width, self.grid_size.height)
+        # self.grid.hole = HoleObj()
+        print(f"does hole exist? {self.features.get_feature(Hole()).exists}")
+        self.grid.add_object(HoleObj(self.features[Hole().get_feature_name()].width, exists = self.features[Hole().get_feature_name()].exists))
+        self.grid.add_object(KeyObj(exists = True))
+        self.grid.add_object(LockObj(exists = True))
+        self.features.run_dependencies()
     
     def P(self, state : State, action : str) -> list[tuple[State, float]] :# transition function
         """ Transition function """

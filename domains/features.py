@@ -1,11 +1,12 @@
 from __future__ import annotations
+from mdp import *
 import random as rand
 import math
 
 class Features(dict):
     """ A dictionary of Feature with helpful functions """
     
-    def __init__(self, *features : Feature, run_with_print = False):
+    def __init__(self, *features : Feature, run_with_print = False, mdp : MDP = None):
         self.run_with_print = run_with_print
         for feature in features:
             if type(feature) == list: # In case Features is initialized with a list instead of several args
@@ -14,10 +15,14 @@ class Features(dict):
                 return
             self[feature.get_feature_name()] = feature
         
+        
+    def run_dependencies(self):
         # Run through features to handle dependencies - e.g. hole with grid width
         for feature in self.values():
-            print(feature)
             feature.run_dependencies(self)
+    
+    def get_feature(self, feature : Feature):
+        return self[feature.get_feature_name()]
     
     def modify_feature(self, feature_name : str = None, new_feature : Feature = None):
         """ Changes one given feature, new_feature, but keeps the rest"""
@@ -28,7 +33,6 @@ class Features(dict):
         if self.run_with_print: print(f'Feature modified: {new_feature.get_feature_name()}')
                 # Run through features to handle dependencies - e.g. hole with grid width
         for feature in self.values():
-            print(feature)
             feature.run_dependencies(self)
     
     def get_random_feature(self)    -> Feature:
@@ -42,11 +46,12 @@ class Features(dict):
         while True:
             random_feature = self[rand.choice(list(possible_features.keys()))]
             # random_feature = self.get_random_feature()
-            if random_feature.can_be_simplified():  break
+            if random_feature.can_be_simplified():  
+                break
             else: possible_features.pop(random_feature.get_feature_name())
         
         simplified_feat = random_feature.get_simplified()
-            
+        print(f' Simplified feat is: {simplified_feat}')
         self.modify_feature(new_feature = simplified_feat)
         
         
@@ -95,20 +100,23 @@ class TestFeat(Feature):
     pass
 
 class Hole(Feature):
-    
+    feature_name = "hole"
     def __init__(self, exists = False, width = 4, height = 1):
         self.exists = exists; self.width = width; self.height = height
         self.dependencies = [GridSize()]  
         self.hole_coordinates = []  
     
     def get_simplified(self) -> Feature:
-        randint = rand.randint(0,self.width + 1)
+        randint = rand.randint(0,self.width - 1)
+        print(f'Randint is {randint}')
+        print(f'self.width is {self.width}')
         if randint == 0:
             self.exists = False
-            return
+            print(f'REMOVED HOLE?!')
+            return self
         else: 
             self.width = randint
-            self.update_hole()
+        # self.update_hole()
             
             # self.set_hole_position()
         return self
@@ -119,20 +127,33 @@ class Hole(Feature):
         # return False
         return self.exists == True or self.width > 1
     
-    def run_dependencies(self, feature_dictionary : Features):
+    def run_dependencies(self, features : Features = None):
         """ Runs through dependencies - position, width and existance all depend on grid size """
+        return
         for feature in self.dependencies:
             if type(feature) == GridSize:
-                grid_feature = feature_dictionary[GridSize().get_feature_name()]
+                # grid_feature = feature_dictionary[GridSize().get_feature_name()]
                 # If grid width is less than 3, we can't fit a hole there
-                if grid_feature.width < 3: 
-                    print("Hole removed: Grid not wide enough")
-                    self.exists = False
                 # hole made smaller than initially given if it can't fit in the grid
-                elif self.width + 2 > grid_feature.width:
-                    self.width = grid_feature.width - 2
                 # set the position such that it is in the middle of the grid
-                self.set_hole_position(grid_feature.width, grid_feature.height)
+                
+                mdp.grid.hole.calculate_coordinates(mdp.grid)
+
+    
+    # def run_dependencies(self, feature_dictionary : Features):
+    #     """ Runs through dependencies - position, width and existance all depend on grid size """
+    #     for feature in self.dependencies:
+    #         if type(feature) == GridSize:
+    #             grid_feature = feature_dictionary[GridSize().get_feature_name()]
+    #             # If grid width is less than 3, we can't fit a hole there
+    #             if grid_feature.width < 3: 
+    #                 print("Hole removed: Grid not wide enough")
+    #                 self.exists = False
+    #             # hole made smaller than initially given if it can't fit in the grid
+    #             elif self.width + 2 > grid_feature.width:
+    #                 self.width = grid_feature.width - 2
+    #             # set the position such that it is in the middle of the grid
+    #             self.set_hole_position(grid_feature.width, grid_feature.height)
     
     def set_hole_position(self, grid_width, grid_height):
         if not self.exists: return
@@ -146,8 +167,12 @@ class Hole(Feature):
         
         x = self.position[0]
         y = self.position[1]
-        self.lower_bound_x = x - math.floor(self.width/2) - 1
-        self.upper_bound_x = x + math.floor(self.width/2)- 1
+        
+        
+        
+        
+        self.lower_bound_x = x - math.floor(self.width/2)
+        self.upper_bound_x = x + math.floor(self.width/2)
         if self.width % 2 == 0: # even
             self.upper_bound_x += 1
             self.lower_bound_x -= 1
@@ -212,6 +237,7 @@ class GridSize(Feature):
         return GridSize(width = new_width, height = new_height)
     
     def can_be_simplified(self):
+        # return False
         return self.width > 1 or self.height > 1
             
     

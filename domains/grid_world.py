@@ -45,16 +45,23 @@ def reset_player():
     generation_counter += 1
     print(generation_counter)
 
-def start_game_mdp(mdp : MDP, key_position, chest_position, stop_event):
+def start_game_mdp(mdp : MDP, stop_event):
     
     
     got_key = False
     player_pos = [mdp.init_state.x, mdp.init_state.y]
     
-    key_pos = key_position
-    chest_pos = chest_position
-    hole_pos = mdp.features[Hole().get_feature_name()].hole_coordinates
-    beam_pos = mdp.features[Hole().get_feature_name()].beam_coordinates
+    grid = mdp.grid
+    
+    key_pos = grid.key.coordinate
+    chest_pos = grid.lock.coordinate
+    
+    hole_pos = grid.hole.coordinates
+    beam_pos = []
+    # if mdp.grid.hole.exists:
+    beam_pos = grid.beams.coordinates
+    # hole_pos = mdp.features[Hole().get_feature_name()].hole_coordinates
+    # beam_pos = mdp.features[Hole().get_feature_name()].beam_coordinates
     GRID_WIDTH = mdp.grid_size.width
     GRID_HEIGHT = mdp.grid_size.height
     
@@ -67,12 +74,15 @@ def start_game_mdp(mdp : MDP, key_position, chest_position, stop_event):
     
     while not stop_event.is_set():
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT  :
                 stop_event.set()
                 pygame.quit()
                 sys.exit()
-                
-        player_pos[0], player_pos[1] = mdp.agent.state.x, mdp.agent.state.y
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q and player_pos[1] < GRID_HEIGHT - 1:
+                    stop_event.set()
+                    pygame.quit()
+                    sys.exit()
                 
                 
         #Checks collision of player and key

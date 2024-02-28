@@ -18,20 +18,18 @@ stop_event = threading.Event()
 feature_vector = Features(GridSize(), Hole(exists = True))
 mdp = MDP(features = feature_vector, run_with_print=True)
 new_mdp = task_simplification(mdp)
-key_pos = [1, 1]
-chest_pos = [5, 7]
 q_agent = QLearningAgent(2, 4, 0.1, 0.9, 0.1)
 
 def run_mdp(new_mdp, stop_event):
     while not stop_event.is_set():
 
-        # time.sleep(1)
+        time.sleep(.1)
         
         
         current_state = tuple([new_mdp.agent.state.x, new_mdp.agent.state.y])
         action = q_agent.choose_action(tuple(current_state))
 
-        # action = new_mdp.agent.take_action()
+        # action = new_mdp.agent.take_action()rr
         new_mdp.P(new_mdp.agent.state, action)
 
         print(new_mdp.state)
@@ -39,7 +37,7 @@ def run_mdp(new_mdp, stop_event):
 # start_game_mdp(new_mdp, key_pos, chest_pos)
 
 # Create threads for Pygame loop and MDP loop
-pygame_thread = threading.Thread(target=start_game_mdp, args=(new_mdp, key_pos, chest_pos, stop_event,))
+pygame_thread = threading.Thread(target=start_game_mdp, args=(new_mdp,  stop_event,))
 mdp_thread = threading.Thread(target=run_mdp, args=(new_mdp,stop_event))
 
 # Start both threads
