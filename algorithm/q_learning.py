@@ -49,8 +49,6 @@ class QLearningAgent:
             # state_tuple = tuple(state)
             # Choose the action with the highest Q-value
             q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
-            if q_values  != [0.0,0.0,0.0,0.0]:
-                print("Q-values: ", q_values)  # Add this line for debugging
             
             max_q_value = max(q_values)
             max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]

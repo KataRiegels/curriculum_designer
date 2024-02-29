@@ -15,11 +15,13 @@ class Features(dict):
                 return
             self[feature.get_feature_name()] = feature
         
-        
+    """
+    
     def run_dependencies(self):
         # Run through features to handle dependencies - e.g. hole with grid width
         for feature in self.values():
             feature.run_dependencies(self)
+    """        
     
     def get_feature(self, feature : Feature):
         return self[feature.get_feature_name()]
@@ -32,8 +34,8 @@ class Features(dict):
             self[feature_name] = new_feature
         if self.run_with_print: print(f'Feature modified: {new_feature.get_feature_name()}')
                 # Run through features to handle dependencies - e.g. hole with grid width
-        for feature in self.values():
-            feature.run_dependencies(self)
+        # for feature in self.values():
+        #     feature.run_dependencies(self)
     
     def get_random_feature(self)    -> Feature:
         """ Get a random feature from the dictionary """
@@ -52,8 +54,6 @@ class Features(dict):
         
         simplified_feat = random_feature.get_simplified()
         self.modify_feature(new_feature = simplified_feat)
-        
-        
         return 
     
     def copy_features(self) -> Features:
@@ -82,21 +82,12 @@ class Feature():
     def can_be_simplified(self) -> bool:
         raise Exception("No can_be_simplified() function defined")
     
+    """
     def run_dependencies(self, feature_dictionary : Features):
-        """ Changes variables that depend on other features - E.g. the hole depends on grid size """
+        # Changes variables that depend on other features - E.g. the hole depends on grid size
         return    
+    """
     
-
-
-class TestFeat(Feature):
-    feature_name = "test_feat"
-    
-    def can_be_simplified(self) -> bool:
-        return True
-    
-    def get_simplified(self):
-        return TestFeat()
-    pass
 
 class Hole(Feature):
     feature_name = "hole"
@@ -123,8 +114,9 @@ class Hole(Feature):
         # return False
         return self.exists == True or self.width > 1
     
+        """
     def run_dependencies(self, features : Features = None):
-        """ Runs through dependencies - position, width and existance all depend on grid size """
+        Runs through dependencies - position, width and existance all depend on grid size 
         return
         for feature in self.dependencies:
             if type(feature) == GridSize:
@@ -135,6 +127,7 @@ class Hole(Feature):
                 
                 mdp.grid.hole.calculate_coordinates(mdp.grid)
 
+        """
     
     # def run_dependencies(self, feature_dictionary : Features):
     #     """ Runs through dependencies - position, width and existance all depend on grid size """
@@ -151,6 +144,7 @@ class Hole(Feature):
     #             # set the position such that it is in the middle of the grid
     #             self.set_hole_position(grid_feature.width, grid_feature.height)
     
+    """
     def set_hole_position(self, grid_width, grid_height):
         if not self.exists: return
         x = math.ceil(grid_width/2)
@@ -198,6 +192,7 @@ class Hole(Feature):
         ]   
         
         self.beam_coordinates = beam_coordinates
+    """
     # A magic methods to be able to make use of the concept of Rng(F_i)
     def __lt__(self, other : Hole):
         if other.exists and not self.exists: return True
@@ -218,7 +213,6 @@ class GridSize(Feature):
     """ The grid size feature """
     
     def __init__(self, width = 10, height = 10, rng = (10, 10)):
-        self.rng = rng
         self.height = height
         self.width = width
         self.feature_name = "grid_size"
@@ -232,17 +226,12 @@ class GridSize(Feature):
         return GridSize(width = new_width, height = new_height)
     
     def can_be_simplified(self):
-        # return False
         return self.width > 3 or self.height > 3
             
     
     def get_feature_name(self):
         """ Feature name for Features dictionary"""
         return "grid_size"
-    
-    def rng(self):
-        pass
-    
     
     def get_no_of_tiles(self):
         """ Helper method - To determine grid tile size """

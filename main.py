@@ -23,7 +23,7 @@ reset_event = threading.Event()
 feature_vector = Features(GridSize(), Hole(exists = True))
 old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
-q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.4)
+q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 
 use_pg = True
 
@@ -71,14 +71,13 @@ class Tracker():
         
         
         self.mdp_copy = self.mdp.copy()
-        
+        accu_reward = 0
         while not self.stop_event.is_set():
 
-            # time.sleep(.1)
+            time.sleep(.1)
             
             current_state = self.mdp.agent.state.copy()
-            current_position = self.mdp.agent.state.coordinate
-            
+            current_sensors = current_state.sensors
             
             action = self.q_agent.choose_action(current_state)
             if action == 0:
@@ -93,25 +92,36 @@ class Tracker():
             
             
             new_state = self.mdp.agent.state
+            new_sensors = new_state.sensors
             
-            old_q_value = self.q_agent.get_q_value(current_state, action)
+            # old_q_value = self.q_agent.get_q_value(current_state, action)
+            old_q_value = self.q_agent.get_q_value(current_sensors, action)
             
             
             self.mdp.agent.state = self.mdp.P(self.mdp.agent.state, action)[0][0]
             self.mdp.update_state()
             
             reward = self.mdp.R(current_state, action)
-            self.reward_logger.append(reward)
-            # new_q_value = old_q_value + self.q_agent.learning_rate * (reward + self.q_agent.discount_factor * max(self.q_agent.get_q_value(new_state.coordinate, a) for a in range(self.q_agent.action_space_size)) - old_q_value)
-            new_q_value = old_q_value + self.q_agent.learning_rate * (reward + self.q_agent.discount_factor * max(self.q_agent.get_q_value(new_state, a) for a in range(self.q_agent.action_space_size)) - old_q_value)
+            accu_reward += reward
             
-            self.q_agent.update_q_value(new_state, action, new_q_value)
+            # new_q_value = old_q_value + self.q_agent.learning_rate * (reward + self.q_agent.discount_factor * max(self.q_agent.get_q_value(new_state.coordinate, a) for a in range(self.q_agent.action_space_size)) - old_q_value)
+            new_q_value = old_q_value + \
+                self.q_agent.learning_rate * (
+                    reward +
+                    self.q_agent.discount_factor * max(
+                        # self.q_agent.get_q_value(new_state, a) 
+                        self.q_agent.get_q_value(new_sensors, a) 
+                        for a in range(self.q_agent.action_space_size)
+                    ) - old_q_value
+                )
+            self.q_agent.update_q_value(new_sensors, action, new_q_value)
 
             if self.mdp.mdp_ended == True:
+                self.reward_logger.append(reward)
                 print("Restarting MDP")
                 
                 term_data = [self.generation, self.mdp.interaction_number, self.mdp.term_cause ]
-                reward_data = [reward, self.mdp.interaction_number, self.mdp.term_cause ]
+                reward_data = [self.generation, accu_reward, self.mdp.term_cause ]
                 
                 self.generation_manager.append([self.generation, self.mdp.interaction_number, self.mdp.term_cause ])
                 self.information_parser['gen'] = self.generation
@@ -130,8 +140,11 @@ class Tracker():
                         \n Generation number: {self.generation} \
                             \n Interaction steps: {self.mdp.interaction_number}\
                                 \n Termination cause: {self.mdp.term_cause}')
+                
+                
                 self.logger.write_to_csv("episode_data", term_data)
                 self.logger.write_to_csv("reward_data", reward_data)
+                accu_reward = 0
                 # self.logger.write_to_reward_csv(data)
                 
                 
@@ -139,20 +152,24 @@ class Tracker():
                 self.mdp = self.mdp_copy.copy()
                 self.pg.mdp = self.mdp
                 self.reset_event.set()
-            self.q_values_log.append(q_agent.q_values)
+            self.q_values_log = q_agent.q_values
         # self.q_values_log = q_agent.q_values
         # self.logger.save_q_values_log(q_values_log)
 
 generation_csv = CsvManager("episode_data", ["Generation number", "Interaction steps", "Termination cause"])
-reward_csv = CsvManager("reward_data", ["Reward", "Interaction steps", "Termination cause"])
+reward_csv = CsvManager("reward_data", ["Generation number","Reward", "Termination cause"])
 
 
 
 logger = Logger(generation_csv, reward_csv)
 plotter = Plotter(generation_csv, reward_csv)
 
+get_q_values = True
+# get_q_values = False
 
-tracker = Tracker(mdp, stop_event, reset_event, q_agent, logger, False)
+
+tracker = Tracker(mdp, stop_event, reset_event, q_agent, logger, get_q_values)
+# tracker = Tracker(mdp, stop_event, reset_event, q_agent, logger, False)
             
     # start_game_mdp(new_mdp, key_pos, chest_pos)
 # Create threads for Pygame loop and MDP loop

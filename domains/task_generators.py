@@ -26,11 +26,12 @@ def task_simplification(mdp : MDP):
     
     while True:
         try:
+            # print(f"Attempting simplify")
             mdp_features.simplify_random_feature()
             new_mdp = MDP(features = mdp_features)
             return new_mdp
-        except: 
-            pass
+        except:
+            print("Simplification faled. Trying again") 
     pass
 
 

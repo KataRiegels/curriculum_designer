@@ -5,6 +5,7 @@ import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from domains.mdp import State, Sensors
 
 
 class Logger():
@@ -26,10 +27,19 @@ class Logger():
             csv.csv_file.close()    
         
     def save_q_values_log(self, q_values_log):
-        np.save(self.q_values_log_path, np.array(q_values_log))
+        # Convert State objects to a hashable representation (e.g., tuple)
+        q_values_log_serializable = {(state.to_np_save(), action): value for (state, action), value in q_values_log.items()}
+        print(f'q log: {q_values_log_serializable}')
+        np.save(self.q_values_log_path, np.array(q_values_log_serializable))
 
     def load_q_values_log(self):
-        return np.load(self.q_values_log_path, allow_pickle=True).tolist()      
+        loaded_data = np.load(self.q_values_log_path, allow_pickle=True).item()
+        # q_values_log = {(State().convert_to_loadable(state), action): value for (state, action), value in loaded_data.items()}
+        q_values_log = {(Sensors.convert_to_loadable(state), action): value for (state, action), value in loaded_data.items()}
+        
+        
+        # q_values_log = State.from_np_load(loaded_data)
+        return q_values_log
 
 class CsvManager():
     

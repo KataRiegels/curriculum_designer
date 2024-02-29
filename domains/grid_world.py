@@ -78,9 +78,12 @@ class PygameInstance():
         GRID_HEIGHT = self.mdp.grid_size.height
         
         
-        SCREEN_WIDTH = GRID_WIDTH * self.GRID_SIZE
+        SCREEN_WIDTH = GRID_WIDTH * self.GRID_SIZE + 200
         SCREEN_HEIGHT = GRID_HEIGHT * self.GRID_SIZE
-
+        
+        self.SCREEN_WIDTH = SCREEN_WIDTH
+        self.SCREEN_HEIGHT = SCREEN_HEIGHT
+        self.text_render_number = 0
         screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Grid_world")
         
@@ -176,12 +179,25 @@ class PygameInstance():
             player_center = (player_rect.x + player_rect.width // 2, player_rect.y + player_rect.height // 2)
             pygame.draw.circle(screen, self.PLAYER_COLOR, player_center, self.GRID_SIZE // 4)
             
-            number_text = font.render(str(self.information_parser["fails"]), True, (255, 0, 0))
-            screen.blit(number_text, (SCREEN_WIDTH - 50, 10))
-            number_text = font.render(str(self.information_parser["successes"]), True, (0, 255, 0))
-            screen.blit(number_text, (SCREEN_WIDTH - 100, 10))
-            number_text = font.render(str(self.information_parser["keys"]), True, (200, 200, 0))
-            screen.blit(number_text, (SCREEN_WIDTH - 150, 10))
+            self.text_renderer( "fails", (255, 0, 0), screen, parsed = True)
+            self.text_renderer( "successes", self.CHEST_COLOR, screen, parsed = True)
+            self.text_renderer( "keys", (230, 230, 0), screen, parsed = True)
+            if ((self.information_parser["fails"]+self.information_parser["successes"]) != 0):
+                fail_success = self.information_parser["successes"]/(self.information_parser["fails"]+self.information_parser["successes"])
+                self.text_renderer( f"success rate: {fail_success} ", (0, 255, 0) , screen, parsed = False)
+            if ((self.information_parser["fails"]+self.information_parser["successes"]) != 0):
+                fail_success = self.information_parser["keys"]/(self.information_parser["fails"]+self.information_parser["successes"])
+                self.text_renderer( f"keys rate: {fail_success} ", (200, 200, 0) , screen, parsed = False)
+            
+            
+            # number_text = font.render(str(self.information_parser["fails"]), True, (255, 0, 0))
+            # screen.blit(number_text, (SCREEN_WIDTH - 50, 10))
+            # number_text = font.render(str(self.information_parser["successes"]), True, (0, 255, 0))
+            # screen.blit(number_text, (SCREEN_WIDTH - 100, 10))
+            # number_text = font.render(str(self.information_parser["keys"]), True, (200, 200, 0))
+            # screen.blit(number_text, (SCREEN_WIDTH - 150, 10))
+            self.text_render_number = 0
+            
             
             # number_text = font.render("up" + str(self.information_parser["action log"]["up"]), True, (200, 0, 170))
             # screen.blit(number_text, (SCREEN_WIDTH - 100, 110))
@@ -200,6 +216,19 @@ class PygameInstance():
             # Control the game speed
             pygame.time.Clock().tick(10)
 
+    def text_renderer(self, parser, color, screen, parsed = False):
+        font = pygame.font.Font(None, 24)
+        
+        self.text_render_number += 1
+        if parsed:
+            text_to_render = f"{parser}: {str(self.information_parser[parser])}"
+        else:
+            text_to_render = parser
+        number_text = font.render(text_to_render, True, color)
+        
+        screen.blit(number_text, (self.SCREEN_WIDTH - 150, 30*self.text_render_number - 25))
+        
+        return
         
 
 
