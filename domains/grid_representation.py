@@ -3,7 +3,7 @@ import math
 from collections import ChainMap
 
 class Cell():
-    
+    """Class to represent each cell in a Grid"""
     x = None
     y = None
     value = None
@@ -15,19 +15,18 @@ class Cell():
         
     @property
     def value(self):
+        """ Allows to make sure value is only changed when allowed"""
         return self._value
 
     @value.setter
     def value(self, new_value):
+        """Allows to make sure value is only changed when allowed"""
         if self._value is not None and new_value is not None:
             raise ValueError(f"Cannot change cell with value of {self._value} to {new_value} ")
         self._value = new_value
     
-    pass
-
 class Grid():
-    
-    
+    """Grid representation"""
     
     size = None
     hole = []
@@ -38,6 +37,8 @@ class Grid():
     key_cells = []
     lock = None
     lock_cells = []
+    
+    # Structure here to make it faster to look for certain cell types
     objects_dict = {
         "hole" : [],
         "beams" : [],
@@ -47,11 +48,14 @@ class Grid():
     
     def __init__(self, size = (10,10)):
         self.size = size
+        
+        # Initialize all Cells
         self.cells = [[Cell(x, y) for y in range(self.size[0])] for x in range(self.size[1])]
 
 
    
     def get_cell(self, x, y):
+        """Returns a Cell instance corresponding to the coordinate"""
         if 0 <= x < self.width and 0 <= y < self.height:
             return self.cells[x][y]
         else:
@@ -59,7 +63,7 @@ class Grid():
             raise IndexError("Coordinates out of bounds")
     
     def assign_cell(self, cell = (None,None), cell_type = None):
-        
+        """Assign a cell type to a Cell"""
         cell = self.get_cell(cell[0], cell[1])
         if cell:
             cell.value = cell_type
@@ -69,24 +73,23 @@ class Grid():
                 self.neutralize_cell(cell)
     
     def neutralize_cell(self, cell):
+        """Removes an object from a cell - e.g. when removing a picked up"""
         if cell.value is not None:
             self.objects_dict[cell.value].remove(cell)
         cell.value = None
                 
     def check_coordinate(self, coordinate):
+        """Return the cell type at given coordinate"""
         return self.get_cell(coordinate[0], coordinate[1]).value
-        pass
-
-    def build_grid(self):
-        
-        pass
 
     def add_object(self, object = None):
+        """Adds an objects, this its corresponding coordinates, to cells in the Grid"""
         object.create(self)
         for coordinate in object.coordinates:
             self.assign_cell(cell = (coordinate[0], coordinate[1]), cell_type = object.value)
  
     def distance_to_nearest(self, agent, sensor_type):
+        """Determine the distance to the nearest cell with *sensor_type*"""
         if sensor_type not in ["hole", "beams", "key", "lock"]:
             raise ValueError(f"Invalid sensor_type: {sensor_type}")
 
@@ -96,18 +99,11 @@ class Grid():
         for cell in self.objects_dict[sensor_type]:
             distance = math.sqrt((cell.x - agent_x)**2 + (cell.y - agent_y)**2)
             min_distance = min(min_distance, distance)
-            
-        
-        # for x in range(self.width):
-        #     for y in range(self.height):
-        #         cell_value = self.get_cell(x, y).value
-        #         if cell_value == sensor_type:
-        #             distance = math.sqrt((x - agent_x)**2 + (y - agent_y)**2)
-        #             min_distance = min(min_distance, distance)
 
         return min_distance
  
     def is_hole_adjacent(self, coordinate):
+        """Checks if there's a hole next to the coordinate"""
         x, y = coordinate
         adjacent_coordinates = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
 
@@ -115,7 +111,6 @@ class Grid():
             if 0 <= adj_x < self.width and 0 <= adj_y < self.height:
                 if self.get_cell(adj_x, adj_y).value == "hole":
                     return True
-
         return False
  
     @property
@@ -125,43 +120,37 @@ class Grid():
     def height(self):
         return self.size[1]
     
-    pass
 
 
 class HoleObj():
-    
+    """Class to represent the pit"""
     grid_size = None
     value = "hole"
     
     def __init__(self, width = 6, height = 1, exists = True):
         self.exists = exists
         self.height = height; self.width = width
-        self.start = None
-        self.even = width % 2 == 0
         self.coordinates = []
         self.start_x = None; self.start_y = None
         self.end_x = None;   self.end_y = None
     
     def calculate_coordinates(self, grid : Grid = None):
+        """Sets the list of hole coordinates"""
+        
         # Finding the middle coordinate for the hole
         # x = math.ceil(grid.width/2)
         y = math.ceil(grid.size[1]/2)
         x = 2
         self.mid = [x,y]
         
-        # For lower coordinates from middle coordinate
-        # self.start_x = x - math.floor(self.width/2)
-        self.start_y = y - math.floor(self.height/2)
         self.start_x = x
         self.start_y = y - math.floor(self.height/2)
         
         # for upper coordinates from middle coordinates
         self.end_x = x + self.width
-        # self.end_x = x + math.floor(self.width/2)
         self.end_y = y + math.floor(self.height/2)
         
         # remove 1 coordinate step if the hole is even sized 
-        # if self.is_width_even():  self.end_x -= 1
         if self.is_height_even(): self.end_y -= 1
         
         # calculate all the coordinates
@@ -173,18 +162,26 @@ class HoleObj():
                 self.coordinates.append([x, y])
     
     def create(self, grid : Grid = None):
+        """Adds the pit and corresponding beams to the Grid"""
         if self.exists:
             self.calculate_coordinates(grid)
         
         self.beams = BeamsObj(self)
         grid.add_object(self.beams)
-        # grid.beams = self.beams
         grid.hole = self
         
         pass
-    
+
+    def is_width_even(self):
+        self.even = self.width % 2 == 0
+        return self.even
+
+    def is_height_even(self):
+        even = self.height % 2 == 0
+        return even
+
+    """
     def calculate_coordinates_2(self, grid : Grid = None):
-        
         # Finding the middle coordinate for the hole
         x = math.ceil(grid.width/2)
         y = math.ceil(grid.height/2)
@@ -212,71 +209,11 @@ class HoleObj():
         
         
         pass
-
-    def is_width_even(self):
-        self.even = self.width % 2 == 0
-        return self.even
-
-    def is_height_even(self):
-        even = self.height % 2 == 0
-        return even
-
-
-class HoleObj2():
-    
-    grid_size = None
-    
-    def __init__(self, width = 6, height = 1, exists = True):
-        self.exists = exists
-        self.height = height; self.width = width
-        self.mid = None
-        self.even = width % 2 == 0
-        self.coordinates = []
-        self.start_x = None; self.start_y = None
-        self.end_x = None;   self.end_y = None
-    
-    
-    
-    def calculate_coordinates_2(self, grid : Grid = None):
-        
-        # Finding the middle coordinate for the hole
-        x = math.ceil(grid.width/2)
-        y = math.ceil(grid.height/2)
-        self.mid = [x,y]
-        
-        # For lower coordinates from middle coordinate
-        self.start_x = x - math.floor(self.width/2)
-        self.start_y = y - math.floor(self.height/2)
-        
-        # for upper coordinates from middle coordinates
-        self.end_x = x + math.floor(self.width/2)
-        self.end_y = y + math.floor(self.height/2)
-        
-        # remove 1 coordinate step if the hole is even sized 
-        if self.is_width_even():  self.end_x -= 1
-        if self.is_height_even(): self.end_y -= 1
-        
-        # calculate all the coordinates
-        x_values = range(self.start_x, self.end_x + 1)  
-        y_values = range(self.start_y, self.end_y + 1)  
-        
-        for x in x_values:
-            for y in y_values:
-                self.coordinates.append([x, y])
-        
-        
-        pass
-
-    def is_width_even(self):
-        self.even = self.width % 2 == 0
-        return self.even
-
-    def is_height_even(self):
-        even = self.height % 2 == 0
-        return even
+    """
 
 
 class BeamsObj():
+    """Class for representing pit beams on the Grid"""
     
     value = "beams"
     
@@ -286,6 +223,7 @@ class BeamsObj():
         self.locate_beams(hole = self.hole)
 
     def locate_beams(self, hole : HoleObj):
+        """Sets coordinates based off of the given hole"""
         if hole.exists:
             self.coordinates = [
                 [hole.start_x - 1, hole.start_y - 1],
@@ -295,11 +233,12 @@ class BeamsObj():
             ]   
        
     def create(self, grid : Grid):
+        """Add beams to the grid"""
         grid.beams = self
         
-    pass
 
 class KeyObj():
+    """Class for representing keys on the Grid"""
     
     value = "key"
     
@@ -314,9 +253,9 @@ class KeyObj():
         self.calculate_coordinates(grid)
     
     def calculate_coordinates(self, grid : Grid = None):
+        """Set key coordinates"""
         if grid.height > 1:
             self.coordinate[1] = grid.height - 2
-            # self.coordinate[1] =  1
         else:
             self.coordinate[1] = 0
         if grid.width > 1:
@@ -328,7 +267,7 @@ class KeyObj():
     pass
 
 class LockObj():
-    
+    """Class for representing locks on the Grid"""
     value = "lock"
     
     def __init__(self, grid : Grid = None, exists = True):
@@ -342,6 +281,7 @@ class LockObj():
         self.calculate_coordinates(grid)
     
     def calculate_coordinates(self, grid : Grid = None):
+        """Set lock coordinates"""
         if grid.height > 1:
             self.coordinate[1] =  1
         else:
@@ -351,9 +291,6 @@ class LockObj():
         else:
             self.coordinate[0] = 0
         
-        pass
-    pass
-    pass
 
 
 
