@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-# from agent import Agent
 from grid_representation import *
 from features import *
 import random as rand
@@ -20,17 +19,18 @@ class Sensors():
         self.lock_sensor = lock_sensor
         
     def __hash__(self):
-        # Use a tuple of the relevant attributes for hashing
+        """Use a tuple of the relevant attributes for hashing"""
         return hash((self.key_found, tuple(self.hole_sensor), tuple(self.beams_sensor),
                      tuple(self.key_sensor), tuple(self.lock_sensor)))
         
     @staticmethod    
     def convert_to_loadable( data):
+        """Crates a structure that can be saved in .npy file"""
         returner = State(data[0], data[1], data[2], data[3], data[4])
         return returner
 
     def to_np_save(self):
-        # Assuming loaded_data is a dictionary or structure obtained from np.load
+        """Lets you load .npy files and convert the data structure to a Sensor"""
         state_logger =        ( self.key_found, tuple(self.hole_sensor), tuple(self.beams_sensor),
                      tuple(self.key_sensor), tuple(self.lock_sensor))
         return state_logger
