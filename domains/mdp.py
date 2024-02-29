@@ -35,6 +35,26 @@ class State():
         new_state.lock_sensor = self.lock_sensor.copy()
         return new_state
     
+    def eq(self, other_state):
+        return (
+            self.x == other_state.x and
+            self.y == other_state.y and
+            self.key_found == other_state.key_found and
+            self.hole_sensor == other_state.hole_sensor and
+            self.beams_sensor == other_state.beams_sensor and
+            self.key_sensor == other_state.key_sensor and
+            self.lock_sensor == other_state.lock_sensor
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, State):
+            return False
+        return self.eq(other)
+    def __hash__(self):
+        # Use a tuple of the relevant attributes for hashing
+        return hash((self.x, self.y, self.key_found, tuple(self.hole_sensor), tuple(self.beams_sensor),
+                     tuple(self.key_sensor), tuple(self.lock_sensor)))
+
     def __str__(self):
         return (f"Position: {self.x},{self.y} ---- ")
 
@@ -104,7 +124,7 @@ class MDP(list):
         return MDP(init_state = self.init_state, features = self.features, run_with_print = self.run_with_print)
     
     def __init__(self, init_state = None, features : Features = None, run_with_print = False):
-        self.agent = Agent(State(1,7))
+        self.agent = Agent(State(2,1))
         self.mdp_ended = False
         # initial state
         if init_state == None:
@@ -153,6 +173,7 @@ class MDP(list):
         new_state = new_pos
         # self.agent.state = new_state
         
+        # Handles removal of key when picked up
         cell_type = self.grid.check_coordinate((new_state.coordinate))
         if cell_type == "key" and not self.agent.state.key_found:
             self.agent.state.key_found == True
@@ -160,12 +181,15 @@ class MDP(list):
             self.grid.assign_cell(new_state.coordinate, None)        
             print("Key found")
         
+        # check for terminal states
+        self.check_termination(new_state)
+        
         # currently always sure?
         p = 1
         
         self.state = new_state
         
-        self.check_termination(new_state)
+        
         self.agent.update_sensors(self.grid)
         return [(new_state, p)]
 
@@ -173,6 +197,7 @@ class MDP(list):
         return self.P(state, action)
 
     def end_mdp(self, cause = None):
+        """ Call to end current mdp due to termination """
         self.mdp_ended = True
         self.term_cause = cause
         print(f'Number of interactions: {self.interaction_number} due to {cause}')
@@ -180,6 +205,7 @@ class MDP(list):
         return True
 
     def check_termination(self, state):
+        """ checks and handles when a state leads to termination """
         current_cell_type = self.grid.check_coordinate((state.coordinate))
         if (current_cell_type == "hole" \
                 or current_cell_type == "lock" and state.key_found):
@@ -203,7 +229,7 @@ class MDP(list):
         else:
             reward = -10
             
-        reward = 0
+        # reward = 0
         
         # reward at new_pos
         # reward = 0

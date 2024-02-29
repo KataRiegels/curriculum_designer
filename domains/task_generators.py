@@ -22,9 +22,15 @@ def task_simplification(mdp : MDP):
     # create new MDP with modified version of parent MDP
     mdp_features.modify_feature(simplified_feat.get_feature_name(), simplified_feat)
     """
-    mdp_features.simplify_random_feature()
-    new_mdp = MDP(features = mdp_features)
-    return new_mdp
+    
+    
+    while True:
+        try:
+            mdp_features.simplify_random_feature()
+            new_mdp = MDP(features = mdp_features)
+            return new_mdp
+        except: 
+            pass
     pass
 
 

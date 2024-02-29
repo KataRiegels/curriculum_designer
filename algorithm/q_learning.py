@@ -16,10 +16,24 @@ class QLearningAgent:
         self.discount_factor = discount_factor
         self.exploration_rate = exploration_rate
 
+    # def get_q_value(self, state, action):
+    #     # Retrieve Q-value from the Q-table
+    #     #print(self.q_values)
+    #     return self.q_values.get((state, action), 0.0)
+
     def get_q_value(self, state, action):
-        # Retrieve Q-value from the Q-table
-        #print(self.q_values)
-        return self.q_values.get((state, action), 0.0)
+    # Retrieve Q-value from the Q-table
+        key = (state, action)
+        q_value = self.q_values.get(key, None)
+        
+        # if q_value is None:
+        #     pass
+        #     print(f"Q-value not found for key: {key}. Using default value: 0.0")
+        # else: 
+        #     print(f"Q-value found for key: {key} with value {q_value}")
+
+
+        return q_value if q_value is not None else 0.0
 
     def update_q_value(self, state, action, new_value):
         # Update Q-value in the Q-table
@@ -32,10 +46,18 @@ class QLearningAgent:
             return action
             
         else:
-            state_tuple = tuple(state)
+            # state_tuple = tuple(state)
             # Choose the action with the highest Q-value
             q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
-            print("Q-values: ", q_values)  # Add this line for debugging
+            if q_values  != [0.0,0.0,0.0,0.0]:
+                print("Q-values: ", q_values)  # Add this line for debugging
+            
+            max_q_value = max(q_values)
+            max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
+
+            # Randomly choose one of the actions with the maximum Q-value
+            chosen_action = random.choice(max_q_indices)
+
             self.exploration_rate -= 0.0000001
-            return max(range(self.action_space_size), key=lambda a: self.get_q_value(state, a))
+            return chosen_action
         #print(self.exploration_rate)

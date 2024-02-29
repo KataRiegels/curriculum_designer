@@ -227,13 +227,13 @@ class GridSize(Feature):
         new_width = self.width
         new_height = self.height
         while(new_width == self.width and new_height == self.height):
-            new_width = rand.randrange(1,self.width + 1) 
-            new_height = rand.randrange(1,self.height + 1)
+            new_width = rand.randrange(3,self.width + 1) 
+            new_height = rand.randrange(3,self.height + 1)
         return GridSize(width = new_width, height = new_height)
     
     def can_be_simplified(self):
         # return False
-        return self.width > 1 or self.height > 1
+        return self.width > 3 or self.height > 3
             
     
     def get_feature_name(self):
