@@ -86,6 +86,7 @@ class Tracker():
             
             # Decide the action to take
             action = self.q_agent.choose_action(current_sensors)
+            old_q_value = self.q_agent.get_q_value(current_sensors, action)
             
             # gibberish to keep track of how often actions are taken : delete?
             if action == 0:
@@ -97,34 +98,33 @@ class Tracker():
             elif action == 3:  
                 self.actions_logger['left'] += 1
             
+            reward = self.mdp.R(current_state, action)
+            accu_reward += reward
             
             # Update the agent's state
             self.mdp.agent.state = self.mdp.P(self.mdp.agent.state, action)[0][0]
             self.mdp.update_state()
             
             # specify new state/sensors
-            new_state = self.mdp.agent.state
+            new_state = self.mdp.agent.state.copy()
             new_sensors = new_state.sensors
             
             # old_q_value = self.q_agent.get_q_value(current_state, action)
-            old_q_value = self.q_agent.get_q_value(current_sensors, action)
             
             # calculate reward corresponding to taking the decided action
-            reward = self.mdp.R(current_state, action)
-            accu_reward += reward
             
             # Calculate new q value
             # new_q_value = old_q_value + self.q_agent.learning_rate * (reward + self.q_agent.discount_factor * max(self.q_agent.get_q_value(new_state.coordinate, a) for a in range(self.q_agent.action_space_size)) - old_q_value)
             new_q_value = old_q_value + \
                 self.q_agent.learning_rate * (
-                    reward +
+                    accu_reward +
                     self.q_agent.discount_factor * max(
                         # self.q_agent.get_q_value(new_state, a) 
                         self.q_agent.get_q_value(new_sensors, a) 
                         for a in range(self.q_agent.action_space_size)
                     ) - old_q_value
                 )
-                
+            print(f'new q value: {new_q_value}')    
             # Update new q value for the coreespinding state and action
             self.q_agent.update_q_value(new_sensors, action, new_q_value)
 
@@ -188,7 +188,7 @@ plotting = True
 
 # determines whether or not to use saved q values
 get_q_values = True
-# get_q_values = False
+get_q_values = False
 
 # Initialize the tracker
 tracker = Tracker(mdp, stop_event, reset_event, q_agent, logger, get_q_values)

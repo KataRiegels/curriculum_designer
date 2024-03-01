@@ -107,7 +107,8 @@ class PygameInstance():
 
 
             #Draw the key
-            pygame.draw.rect(screen, self.KEY_COLOR, (key_pos[0] * self.GRID_SIZE, key_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
+            if not self.mdp.agent.state.key_found:
+                pygame.draw.rect(screen, self.KEY_COLOR, (key_pos[0] * self.GRID_SIZE, key_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
 
             #Draw the chest
             pygame.draw.rect(screen, self.CHEST_COLOR, (chest_pos[0] * self.GRID_SIZE, chest_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))

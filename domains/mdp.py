@@ -18,6 +18,21 @@ class Sensors():
         self.key_sensor = key_sensor
         self.lock_sensor = lock_sensor
         
+    def eq(self, other_state):
+        """Determine if two states are equal"""
+        return (
+            self.key_found == other_state.key_found and
+            self.hole_sensor == other_state.hole_sensor and
+            self.beams_sensor == other_state.beams_sensor and
+            self.key_sensor == other_state.key_sensor and
+            self.lock_sensor == other_state.lock_sensor
+        )
+
+    def __eq__(self, other):
+        """Overwriting '==' operator"""
+        if not isinstance(other, Sensors):
+            return False
+        return self.eq(other)  
     def __hash__(self):
         """Use a tuple of the relevant attributes for hashing"""
         return hash((self.key_found, tuple(self.hole_sensor), tuple(self.beams_sensor),
@@ -183,11 +198,11 @@ class MDP(list):
         else:
             self.init_state = init_state
         
-        # initialize mdp agent
-        self.agent = Agent(self.init_state)
-        
         # Initialize the Grid
         self.grid = Grid()
+        
+        # initialize mdp agent
+        self.agent = Agent(self.init_state)
         
         # Keep track of whether the MDP episode should terminate.
         self.mdp_ended = False
@@ -213,6 +228,7 @@ class MDP(list):
     
     def update_state(self):
         """Updates every run_mdp loop"""
+        self.agent.update_sensors(self.grid)
         self.interaction_number += 1
     
     def attach_features(self):
@@ -221,6 +237,7 @@ class MDP(list):
         self.grid.add_object(HoleObj(self.features[Hole().get_feature_name()].width, exists = self.features[Hole().get_feature_name()].exists))
         self.grid.add_object(KeyObj(exists = True))
         self.grid.add_object(LockObj(exists = True))
+        self.agent.update_sensors(self.grid)
         # self.features.run_dependencies()
     
     def P(self, state : State, action : str) -> list[tuple[State, float]] :# transition function
@@ -245,7 +262,6 @@ class MDP(list):
         p = 1
         
         
-        self.agent.update_sensors(self.grid)
         return [(new_state, p)]
 
     def transition(self, state : State, action : str):
