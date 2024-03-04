@@ -1,4 +1,4 @@
-from domains.grid_world import grid_world
+from domains import grid_world
 from algorithm import q_learning
 
 domain = grid_world.Grid_World(10, 10, 4, 1, [1, 1], [5, 7], [[8, 3], [8, 5]], [[2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4]], 40)
