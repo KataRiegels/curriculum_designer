@@ -121,7 +121,7 @@ class Tracker():
             # For Q-learning
             # new_q_value = old_q_value + \
             #     self.q_agent.learning_rate * (
-            #         accu_reward +
+            #         reward +
             #         self.q_agent.discount_factor * max(
             #             # self.q_agent.get_q_value(new_state, a)
             #             self.q_agent.get_q_value(new_sensors, a)
