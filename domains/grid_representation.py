@@ -256,10 +256,12 @@ class KeyObj():
         """Set key coordinates"""
         if grid.height > 1:
             self.coordinate[1] = grid.height - 2
+            # self.coordinate[1] = 1
         else:
             self.coordinate[1] = 0
         if grid.width > 1:
             self.coordinate[0] = grid.width - 2
+            # self.coordinate[0] = 6
         else:
             self.coordinate[0] = 0
         
