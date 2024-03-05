@@ -6,6 +6,7 @@ sys.path.append(path)
 # from ..domains.M import *
 print("--SCRIPT STARTING")
 from algorithm.q_learning import *
+from algorithm.sarsa import *
 from domains.features import *
 from domains.mdp import *
 from domains.task_generators import *
@@ -26,6 +27,8 @@ old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
 
 
+#q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 
 use_pg = True
 
@@ -114,27 +117,37 @@ class Tracker():
             
             # Calculate new q value
             # new_q_value = old_q_value + self.q_agent.learning_rate * (reward + self.q_agent.discount_factor * max(self.q_agent.get_q_value(new_state.coordinate, a) for a in range(self.q_agent.action_space_size)) - old_q_value)
-            # new_q_value = \
 
-            old_q_value = self.q_agent.get_q_value(current_sensors, action)
-            new_q_value = old_q_value + \
-                self.q_agent.learning_rate * (
-                    accu_reward +
-                    self.q_agent.discount_factor * max(
-                        # self.q_agent.get_q_value(new_state, a) 
-                        self.q_agent.get_q_value(new_sensors, a) 
-                        # self.q_agent.get_q_value(current_sensors, a) 
-                        for a in range(self.q_agent.action_space_size)
-                    ) 
-                    - old_q_value
-                )
-            print(f'new q value: {new_q_value}')    
+            # For Q-learning
+            # new_q_value = old_q_value + \
+            #     self.q_agent.learning_rate * (
+            #         reward +
+            #         self.q_agent.discount_factor * max(
+            #             # self.q_agent.get_q_value(new_state, a)
+            #             self.q_agent.get_q_value(new_sensors, a)
+            #             for a in range(self.q_agent.action_space_size)
+            #         ) - old_q_value
+            #     )
+            #new_q_value = q_agent.get_updated_q_value(new_sensors, accu_reward, old_q_value, q_agent.learning_rate, q_agent.discount_factor, q_agent.action_space_size)
+
+
+
             # Update new q value for the coreespinding state and action
-            self.q_agent.update_q_value(current_sensors, action, new_q_value)
-            # self.q_agent.update_q_value(new_sensors, action, new_q_value)
+            #For Q-learning - Implement if Q-learning is used
+            #self.q_agent.update_q_value(new_sensors, action, new_q_value)
 
-            q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
-            self.information_parser['q_values'] = q_values
+
+            #For SARSA - Implement if SARSA is used
+            next_action = self.q_agent.choose_action(new_sensors)
+            self.q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
+
+            current_state = new_state
+            action = next_action
+
+
+
+
+
             # If the MDP ended (aka agent reached terminal state)
             if self.mdp.mdp_ended == True:
                 print("Restarting MDP")
