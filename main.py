@@ -26,14 +26,16 @@ feature_vector = Features(GridSize(), Hole(exists = True))
 old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
 
+learning_alg = "Sarsa"
+learning_alg = "QLearning"
 
-#q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
-q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+if learning_alg == "Sarsa":
+    q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+if learning_alg == "QLearning":
+    q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 
 use_pg = True
 
-learning_alg = "Sarsa"
-# learning_alg = "QLearning"
 
 class Tracker():
     
