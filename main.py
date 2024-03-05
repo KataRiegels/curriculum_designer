@@ -32,16 +32,17 @@ q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 
 
 use_pg = True
 
-
+learning_alg = "Sarsa"
+# learning_alg = "QLearning"
 
 class Tracker():
     
     
-    def __init__(self, mdp : MDP, stop_event, reset_event, q_agent, logger, load_q = False):
+    def __init__(self, mdp : MDP, stop_event, reset_event, q_agent, logger, load_q = False, learning_alg = "QLearning"):
         self.q_agent = q_agent
         self.mdp = mdp
         self.logger = logger
-        
+        self.learning_alg = learning_alg
         self.stop_event = stop_event
         self.reset_event = reset_event
         self.pg = PygameInstance()
@@ -131,18 +132,19 @@ class Tracker():
             #new_q_value = q_agent.get_updated_q_value(new_sensors, accu_reward, old_q_value, q_agent.learning_rate, q_agent.discount_factor, q_agent.action_space_size)
 
 
-
-            # Update new q value for the coreespinding state and action
+            
             #For Q-learning - Implement if Q-learning is used
-            #self.q_agent.update_q_value(new_sensors, action, new_q_value)
-
-
+            if learning_alg == "QLearning":
+                self.q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, reward)
+            
             #For SARSA - Implement if SARSA is used
-            next_action = self.q_agent.choose_action(new_sensors)
-            self.q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
+            if learning_alg == "Sarsa":
+                next_action = self.q_agent.choose_action(new_sensors)
+                self.q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
+                current_state = new_state
+                action = next_action
 
-            current_state = new_state
-            action = next_action
+
             
             q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
@@ -215,7 +217,7 @@ get_q_values = False
 # q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 
 # Initialize the tracker
-tracker = Tracker(mdp, stop_event, reset_event, q_agent, logger, get_q_values)
+tracker = Tracker(mdp, stop_event, reset_event, q_agent, logger, get_q_values, learning_alg)
 
 # define threads
 pygame_thread = threading.Thread(target=tracker.pg.start_game_mdp, args=( stop_event, reset_event))
