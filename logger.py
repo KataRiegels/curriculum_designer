@@ -27,7 +27,7 @@ class Logger():
             csv.csv_file.close()    
         
     def save_q_values_log(self, q_values_log):
-        return
+        # return
         # Convert State objects to a hashable representation (e.g., tuple)
         q_values_log_serializable = {(state.to_np_save(), action): value for (state, action), value in q_values_log.items()}
         # print(f'q log: {q_values_log_serializable}')
@@ -80,6 +80,9 @@ class Plotter():
         return generations, interactions, term_causes    
 
     def read_csv_file(self, csv : CsvManager):
+        # Key and success rate
+        # learning rate ?
+        # optical policy - max return
         df = pd.read_csv(csv.csv_file_path, delimiter=';')
         columns = []
         
