@@ -29,7 +29,7 @@ class Logger():
     def save_q_values_log(self, q_values_log):
         # Convert State objects to a hashable representation (e.g., tuple)
         q_values_log_serializable = {(state.to_np_save(), action): value for (state, action), value in q_values_log.items()}
-        print(f'q log: {q_values_log_serializable}')
+        # print(f'q log: {q_values_log_serializable}')
         np.save(self.q_values_log_path, np.array(q_values_log_serializable))
 
     def load_q_values_log(self):
@@ -95,7 +95,7 @@ class Plotter():
 
     def plot_single_bar_chart(self, generations, interactions, term_causes, title):
         # Color bars based on termination cause
-        colors = {'lock': 'blue', 'hole': 'red'}
+        colors = {'lock': 'blue', 'hole': 'red', "holekey" : "yellow"}
         bar_width = 0.35
         # Replace the previous bar_positions and bars lines with these
         bar_positions = [gen for gen in generations[1]]

@@ -26,7 +26,6 @@ old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
 
 
-q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 
 use_pg = True
 
@@ -54,6 +53,7 @@ class Tracker():
         self.information_parser["fails"] = 0
         self.information_parser["successes"] = 0
         self.information_parser["keys"] = 0
+        self.information_parser['q_values'] = [0,0,0,0]
         
         self.actions_logger = {
             "up" : 0,
@@ -77,7 +77,7 @@ class Tracker():
         accu_reward = 0
         while not self.stop_event.is_set():
 
-            time.sleep(.1)
+            # time.sleep(.5)
             
             # Current state before moving
             current_state = self.mdp.agent.state.copy()
@@ -86,7 +86,6 @@ class Tracker():
             
             # Decide the action to take
             action = self.q_agent.choose_action(current_sensors)
-            old_q_value = self.q_agent.get_q_value(current_sensors, action)
             
             # gibberish to keep track of how often actions are taken : delete?
             if action == 0:
@@ -115,20 +114,27 @@ class Tracker():
             
             # Calculate new q value
             # new_q_value = old_q_value + self.q_agent.learning_rate * (reward + self.q_agent.discount_factor * max(self.q_agent.get_q_value(new_state.coordinate, a) for a in range(self.q_agent.action_space_size)) - old_q_value)
+            # new_q_value = \
+
+            old_q_value = self.q_agent.get_q_value(current_sensors, action)
             new_q_value = old_q_value + \
                 self.q_agent.learning_rate * (
                     accu_reward +
                     self.q_agent.discount_factor * max(
                         # self.q_agent.get_q_value(new_state, a) 
                         self.q_agent.get_q_value(new_sensors, a) 
+                        # self.q_agent.get_q_value(current_sensors, a) 
                         for a in range(self.q_agent.action_space_size)
-                    ) - old_q_value
+                    ) 
+                    - old_q_value
                 )
             print(f'new q value: {new_q_value}')    
             # Update new q value for the coreespinding state and action
-            self.q_agent.update_q_value(new_sensors, action, new_q_value)
+            self.q_agent.update_q_value(current_sensors, action, new_q_value)
+            # self.q_agent.update_q_value(new_sensors, action, new_q_value)
 
-
+            q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
+            self.information_parser['q_values'] = q_values
             # If the MDP ended (aka agent reached terminal state)
             if self.mdp.mdp_ended == True:
                 print("Restarting MDP")
@@ -146,15 +152,16 @@ class Tracker():
                 
                 
                 # Update values for the information parser (parsed to the pygame instance)
+               
                 self.information_parser['gen'] = self.generation
                 self.information_parser['interactions'] = self.mdp.interaction_number
                 self.information_parser['term'] = self.mdp.term_cause
                 self.information_parser['action log'] = self.actions_logger
                 if self.mdp.agent.state.key_found: self.information_parser['keys'] += 1
                 
-                if self.mdp.term_cause == "hole":
+                if self.mdp.term_cause == ("hole" or "holekey") :
                     self.information_parser['fails'] += 1
-                else:
+                elif self.mdp.term_cause == "lock":
                     self.information_parser['successes'] += 1
                 
                 # Printing generation information
@@ -172,7 +179,8 @@ class Tracker():
                 
                 self.mdp = self.mdp_copy.copy()
                 self.pg.mdp = self.mdp
-                
+                # time.sleep(3)
+                    
                 self.reset_event.set()
             self.q_values_log = q_agent.q_values
 
@@ -189,6 +197,8 @@ plotting = True
 # determines whether or not to use saved q values
 get_q_values = True
 get_q_values = False
+
+q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 
 # Initialize the tracker
 tracker = Tracker(mdp, stop_event, reset_event, q_agent, logger, get_q_values)

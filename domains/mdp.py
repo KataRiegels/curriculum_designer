@@ -279,7 +279,10 @@ class MDP(list):
         current_cell_type = self.grid.check_coordinate((state.coordinate))
         
         # Agent fell into the pit or unlocked the lock
-        if (current_cell_type == "hole" \
+        if (current_cell_type == "hole" and state.key_found):
+            self.end_mdp(cause = "holekey")            
+            
+        elif (current_cell_type == "hole" \
                 or current_cell_type == "lock" and state.key_found):
             self.end_mdp(cause = current_cell_type)            
     
@@ -301,9 +304,9 @@ class MDP(list):
             print(f'Unlocked lock with key!')
             reward = 1000
         else:
-            reward = -10
+            reward = -1
                 
-        return reward
+        return reward*(1)
         
     def __str__(self):
         """How the class is represented when e.g. printed"""

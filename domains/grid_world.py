@@ -140,6 +140,13 @@ class PygameInstance():
                 self.text_renderer( f"keys rate: {fail_success} ", (200, 200, 0) , screen, parsed = False)
             
             
+            rd = 0
+            q_values = self.information_parser["q_values"]
+            self.text_renderer(f"up: {round(q_values[0],rd)}", (0,0,0), screen, parsed = False)
+            self.text_renderer(f"right: {round(q_values[1],rd)}", (0,0,0), screen, parsed = False)
+            self.text_renderer(f"down: {round(q_values[2],rd)}", (0,0,0), screen, parsed = False)
+            self.text_renderer(f"left: {round(q_values[3],rd)}", (0,0,0), screen, parsed = False)
+            
             self.text_render_number = 0
             
             
@@ -157,12 +164,12 @@ class PygameInstance():
         
         self.text_render_number += 1
         if parsed:
-            text_to_render = f"{parser}: {str(self.information_parser[parser])}"
+            text_to_render = f"{parser}: {str(round(self.information_parser[parser],4))}"
         else:
             text_to_render = parser
         number_text = font.render(text_to_render, True, color)
         
-        screen.blit(number_text, (self.SCREEN_WIDTH - 150, 30*self.text_render_number - 25))
+        screen.blit(number_text, (self.SCREEN_WIDTH - 190, 30*self.text_render_number - 25))
         
         return
         
