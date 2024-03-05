@@ -143,8 +143,9 @@ class Tracker():
 
             current_state = new_state
             action = next_action
-
-
+            
+            q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
+            self.information_parser['q_values'] = q_values
 
 
 
@@ -211,7 +212,7 @@ plotting = True
 get_q_values = True
 get_q_values = False
 
-q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+# q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 
 # Initialize the tracker
 tracker = Tracker(mdp, stop_event, reset_event, q_agent, logger, get_q_values)
