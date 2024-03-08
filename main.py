@@ -60,26 +60,22 @@ class Tracker():
         self.pg = PygameInstance()
         self.pg.mdp = self.mdp
         
+        self.success_tracker = SuccessTracker(success_threshhold=5)
+
+        # If transfer is wanted
+        try:
+            if load_q:
+                q_values = self.logger.load_q_values_log()
+                self.q_agent.q_values = q_values
+        except:
+            pass
+
         # Information parser for the PyGame
         self.pg.information_parser = self.information_parser
         self.information_parser["fails"], self.information_parser["successes"], self.information_parser["keys"] = 0, 0, 0
         self.information_parser['q_values'] = [0,0,0,0]; self.information_parser["q_values_grid"] = self.grid_matrix
         self.information_parser["q_agent"] = q_agent
-        
-        
-
-        self.success_tracker = SuccessTracker(success_threshhold=5)
-
-        # If transfer is wanted
-        if load_q:
-            q_values = self.logger.load_q_values_log()
-            self.q_agent.q_values = q_values
-        
-
     
-
-    
-    # def learn(self):
     def learn(self, q_agent : SarsaAgent):
         self.accu_reward = 0
         self.mdp = self.mdp_copy.copy()
@@ -98,7 +94,6 @@ class Tracker():
             current_sensors = current_state.sensors
             
             # Decide the action to take
-            
             action = q_agent.choose_action(current_sensors)
             
             new_state, reward, done = self.mdp.take_action(action)
