@@ -3,9 +3,12 @@ import os
 path = os.path.abspath("domains")
 # path = os.path.abspath("algorithm")
 sys.path.append(path)
+path = os.path.abspath("algorithm")
+sys.path.append(path)
 # from ..domains.M import *
 print("--SCRIPT STARTING")
 from algorithm.q_learning import *
+from algorithm.policy import *
 from algorithm.sarsa import *
 from algorithm.success_tracker import *
 from domains.features import *
@@ -35,8 +38,9 @@ learning_alg = "Sarsa"
 if learning_alg == "QLearning":
     q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 if learning_alg == "Sarsa":
+    # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
     q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
-    # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.0)
+    q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.0)
 
 use_pg = True
 
@@ -96,6 +100,9 @@ class Tracker():
         self.optimized_agent = q_agent.copy() 
         self.optimized_agent.use_optimal = True
         self.optimized_agent.set_q_values_from_policy(self.optimal_policy)
+        
+        self.visited_sensor = None
+        
     
     def run_mdp(self):
         
@@ -110,8 +117,7 @@ class Tracker():
         self.logger.save_optimal_q_values("q_values_optimal.npy", self.optimal_policy)
         
         
-        
-        # self.optimal_policy = self.logger.load_q_values_optimal()
+        self.optimal_policy = self.logger.load_q_values_optimal()
         
         self.optimized_agent = q_agent.copy() 
         self.optimized_agent.use_optimal = True
@@ -172,17 +178,17 @@ class Tracker():
                 if learning_alg == "Sarsa":
                     next_action = self.q_agent.choose_action(new_sensors)
                     q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
-                    current_state = new_state
-                    action = next_action
+                    # current_state = new_state
+                    # action = next_action
             #This might need to be changed to "current_sensor" instead of "current_state"
             self.success_tracker.update_path(current_state)
 
             q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
 
-            self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_sensors)
-            # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_sensors)
-
+            self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_state.sensors)
+            # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_state.sensors)
+            self.visited_sensor = new_sensors
             self.information_parser["q_values_grid"] = self.grid_matrix
             # print(self.information_parser["q_values_grid"])
 

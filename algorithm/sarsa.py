@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import copy
+from policy import Policy
 
 class SarsaAgent:
     def __init__(self, max_training_episodes, max_steps, state_space_size, action_space_size, learning_rate,
@@ -18,23 +19,13 @@ class SarsaAgent:
         self.exploration_rate = exploration_rate
         self.use_optimal = False
         self.optimal_policy = {}
+        self.policy = {}
 
-    # def get_q_value(self, state, action):
-    #     # Retrieve Q-value from the Q-table
-    #     #print(self.q_values)
-    #     return self.q_values.get((state, action), 0.0)
 
     def get_q_value(self, state, action):
         # Retrieve Q-value from the Q-table
         key = (state, action)
         q_value = self.q_values.get(key, None)
-
-        # if q_value is None:
-        #     pass
-        #     print(f"Q-value not found for key: {key}. Using default value: 0.0")
-        # else:
-        #     print(f"Q-value found for key: {key} with value {q_value}")
-
         return q_value if q_value is not None else 0.0
 
 
@@ -89,6 +80,8 @@ class SarsaAgent:
         return q_values_for_state
 
     def get_optimal_policy(self):
+        policy = Policy(self.q_values)
+        return policy
         optimal_policy = {}
 
         # Iterate over all unique states
