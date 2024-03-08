@@ -33,9 +33,9 @@ learning_alg = "QLearning"
 learning_alg = "Sarsa"
 
 if learning_alg == "QLearning":
-    q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+    q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
 if learning_alg == "Sarsa":
-    q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+    q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
     # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.0)
 
 use_pg = True
@@ -44,7 +44,7 @@ use_pg = True
 class Tracker():
     
     
-    def __init__(self, mdp : MDP, stop_event, reset_event, go_to_optimal_event, q_agent : SarsaAgent, logger, load_q = False, learning_alg = "QLearning"):
+    def __init__(self, mdp : MDP, stop_event, reset_event, go_to_optimal_event, q_agent : SarsaAgent, logger, load_q = False, learning_alg = "Sarsa"):
         self.q_agent = q_agent
         self.mdp = mdp
         self.mdp_copy = self.mdp.copy()
@@ -87,10 +87,10 @@ class Tracker():
         self.q_agent.use_optimal = False
         
         
-        self.optimal_policy = self.logger.load_q_values_optimal()
-        self.optimized_agent = q_agent.copy() 
-        self.optimized_agent.use_optimal = True
-        self.optimized_agent.set_q_values_from_policy(self.optimal_policy)
+        # self.optimal_policy = self.logger.load_q_values_optimal()
+        # self.optimized_agent = q_agent.copy()
+        # self.optimized_agent.use_optimal = True
+        #self.optimized_agent.set_q_values_from_policy(self.optimal_policy)
     
     def run_mdp(self):
         
@@ -185,15 +185,16 @@ class Tracker():
         
         current_path = self.success_tracker.current_path
         #if self.success_tracker.track_success(current_path):
-        if self.success_tracker.previous_path.copy() == current_path:
+        if self.success_tracker.previous_path == current_path:
             self.success_tracker.path_count += 1
+            optimal_policy = self.q_agent.get_optimal_policy()
             if self.success_tracker.path_count < self.success_tracker.success_threshhold:
                 print(self.success_tracker.path_count)
                 print(f'Same path taken {self.success_tracker.path_count} amount of times!')
                 self.success_tracker.start_new_path()
             else:
                 print(f'Same route taken {self.success_tracker.success_threshhold} amount of times! optimal policy found')
-                # break
+                #break
         else:
             self.success_tracker.path_count = 0
             self.success_tracker.start_new_path()
@@ -297,8 +298,8 @@ plotter = Plotter(generation_csv, reward_csv)
 plotting = True
 
 # determines whether or not to use saved q values
-get_q_values = True
-# get_q_values = False
+#get_q_values = True
+get_q_values = False
 
 
 # Initialize the tracker
