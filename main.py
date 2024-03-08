@@ -49,6 +49,9 @@ class Tracker():
         self.mdp = mdp
         self.mdp_copy = self.mdp.copy()
         
+        q_values_dummy = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
+        self.grid_matrix = [[q_values_dummy for _ in range(self.mdp.grid.width)] for _ in range(self.mdp.grid.height)]
+        
         self.logger = logger
         self.learning_alg = learning_alg
         self.stop_event = stop_event
@@ -61,6 +64,7 @@ class Tracker():
         self.reward_logger = []
         
         self.information_parser = {}
+        self.information_parser["q_values_grid"] = self.grid_matrix
         
         self.pg.information_parser = self.information_parser
         self.information_parser["fails"] = 0
@@ -79,6 +83,7 @@ class Tracker():
         self.q_values_log = []
 
         self.success_tracker = SuccessTracker(success_threshhold=5)
+        self.information_parser["q_agent"] = q_agent
 
         if load_q:
             q_values = self.logger.load_q_values_log()
@@ -106,7 +111,8 @@ class Tracker():
         
         
         
-        self.optimal_policy = self.logger.load_q_values_optimal()
+        # self.optimal_policy = self.logger.load_q_values_optimal()
+        
         self.optimized_agent = q_agent.copy() 
         self.optimized_agent.use_optimal = True
         self.optimized_agent.set_q_values_from_policy(self.optimal_policy)
@@ -124,12 +130,15 @@ class Tracker():
     def learn(self, q_agent : SarsaAgent):
         self.accu_reward = 0
         self.mdp = self.mdp_copy.copy()
+        self.pg.mdp = self.mdp
         
         # while not self.stop_event.is_set():
         while self.while_condition(q_agent):
-            
+            self.information_parser["q_agent"] = q_agent
+            # time.sleep(.1)
             if q_agent.use_optimal:
                 time.sleep(.5)
+            # else: time.sleep (0.5)
             
             # Current state before moving
             current_state = self.mdp.agent.state.copy()
@@ -165,12 +174,17 @@ class Tracker():
                     q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
                     current_state = new_state
                     action = next_action
-
             #This might need to be changed to "current_sensor" instead of "current_state"
             self.success_tracker.update_path(current_state)
 
             q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
+
+            self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_sensors)
+            # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_sensors)
+
+            self.information_parser["q_values_grid"] = self.grid_matrix
+            # print(self.information_parser["q_values_grid"])
 
             # If the MDP ended (aka agent reached terminal state)
             if self.mdp.mdp_ended == True:
@@ -219,12 +233,6 @@ class Tracker():
             self.information_parser['fails'] += 1
         elif self.mdp.term_cause == "lock":
             self.information_parser['successes'] += 1
-        
-        # Printing generation information
-        # print(f'Generation information:\
-        #         \n Generation number: {self.generation} \
-        #             \n Interaction steps: {self.mdp.interaction_number}\
-        #                 \n Termination cause: {self.mdp.term_cause}')
         
         # Log data for the terminated MDP
         self.logger.write_to_csv("episode_data", term_data)
@@ -295,10 +303,11 @@ plotter = Plotter(generation_csv, reward_csv)
 
 # want plots or not?
 plotting = True
+plotting = False
 
 # determines whether or not to use saved q values
 get_q_values = True
-# get_q_values = False
+get_q_values = False
 
 
 # Initialize the tracker

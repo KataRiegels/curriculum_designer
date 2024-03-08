@@ -17,6 +17,7 @@ class SarsaAgent:
         self.discount_factor = discount_factor
         self.exploration_rate = exploration_rate
         self.use_optimal = False
+        self.optimal_policy = {}
 
     # def get_q_value(self, state, action):
     #     # Retrieve Q-value from the Q-table
@@ -100,7 +101,7 @@ class SarsaAgent:
 
             # Store the optimal action for the current state
             optimal_policy[state] = optimal_action
-
+        self.optimal_policy = optimal_policy
         return optimal_policy
 
     def q_values_from_policy(self, policy):
@@ -128,12 +129,12 @@ class SarsaAgent:
         # Epsilon-greedy policy for action selection
             # state_tuple = tuple(state)
         # Choose the action with the highest Q-value
-        print(state)
+        # print(state)
         q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
         max_q_value = max(q_values)
         max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
-        if q_values != [0.0, 0.0, 0.0, 0.0]:
-            print(f'Q values: {q_values}')
+        # if q_values != [0.0, 0.0, 0.0, 0.0]:
+        #     print(f'Q values: {q_values}')
 
             # Randomly choose one of the actions with the maximum Q-value
         chosen_action = random.choice(max_q_indices)

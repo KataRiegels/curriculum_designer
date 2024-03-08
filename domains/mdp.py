@@ -210,6 +210,8 @@ class MDP(list):
         else:
             self.init_state = init_state
         
+        self.q_agent = None
+        
         # Initialize the Grid
         self.grid = Grid()
         

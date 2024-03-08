@@ -90,6 +90,7 @@ class Grid():
  
     def distance_to_nearest(self, agent, sensor_type):
         """Determine the distance to the nearest cell with *sensor_type*"""
+        # Manhatten?
         if sensor_type not in ["hole", "beams", "key", "lock"]:
             raise ValueError(f"Invalid sensor_type: {sensor_type}")
 
