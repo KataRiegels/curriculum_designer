@@ -139,9 +139,11 @@ class Tracker():
             if self.mdp.mdp_ended == True:
                 #print("Restarting MDP")
                 current_path = self.success_tracker.current_path
+                #print(f'"PREVIOUS PATH!{self.success_tracker.previous_path} \n CURRENT PATH:{current_path}')
                 #if self.success_tracker.track_success(current_path):
-                if self.success_tracker.previous_path.copy() == current_path:
+                if self.success_tracker.previous_path == current_path:
                     self.success_tracker.path_count += 1
+                    print("lololol")
                     if self.success_tracker.path_count < self.success_tracker.success_threshhold:
                         print(self.success_tracker.path_count)
                         print(f'Same path taken {self.success_tracker.path_count} amount of times!')

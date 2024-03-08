@@ -2,12 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="656af887-46a8-4018-b64d-12e33f9e64e1" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/algorithm/success_tracker.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/algorithm/q_learning.py" beforeDir="false" afterPath="$PROJECT_DIR$/algorithm/q_learning.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/algorithm/sarsa.py" beforeDir="false" afterPath="$PROJECT_DIR$/algorithm/sarsa.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/domains/grid_world.py" beforeDir="false" afterPath="$PROJECT_DIR$/domains/grid_world.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/domains/mdp.py" beforeDir="false" afterPath="$PROJECT_DIR$/domains/mdp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/domains/grid_representation.py" beforeDir="false" afterPath="$PROJECT_DIR$/domains/grid_representation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -78,7 +74,7 @@
       <option name="presentableId" value="Default" />
       <updated>1709797899070</updated>
       <workItem from="1709797902435" duration="13537000" />
-      <workItem from="1709899456499" duration="654000" />
+      <workItem from="1709899456499" duration="2354000" />
     </task>
     <servers />
   </component>
@@ -98,7 +94,7 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/curriculum_designer$main.coverage" NAME="main Coverage Results" MODIFIED="1709811427290" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/curriculum_designer$main.coverage" NAME="main Coverage Results" MODIFIED="1709901830148" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/curriculum_designer$q_learning.coverage" NAME="q-learning Coverage Results" MODIFIED="1709027779814" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/algorithm" />
     <SUITE FILE_PATH="coverage/curriculum_designer$grid_world.coverage" NAME="grid_world Coverage Results" MODIFIED="1709025801668" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/domains/grid_world" />
     <SUITE FILE_PATH="coverage/curriculum_designer$temp_run.coverage" NAME="temp_run Coverage Results" MODIFIED="1709303523699" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
