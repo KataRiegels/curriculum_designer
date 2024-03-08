@@ -5,7 +5,7 @@ import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from domains.mdp import State, Sensors
+from mdp import State, Sensors
 
 
 class Logger():
@@ -15,7 +15,7 @@ class Logger():
             self.csv_managers[csv.file_name] = csv
         
         self.q_values_log_path = "q_values_log.npy"
-        self.q_values_optimal = "q_values_optimal.npy"
+        self.q_values_optimal_path = "q_values_optimal.npy"
         
         
     def write_to_csv(self, file_name, data):
@@ -30,16 +30,16 @@ class Logger():
     def save_optimal_q_values(self, q_values_path, q_values_log):
         # return
         # Convert State objects to a hashable representation (e.g., tuple)
-        self.q_values_optimal = q_values_path
+        self.q_values_optimal_path = q_values_path
         q_values_log_serializable = {state.to_np_save(): value for state, value in q_values_log.items()}
         # print(f'q log: {q_values_log_serializable}')
         np.save(q_values_path, np.array(q_values_log_serializable))
 
     def load_q_values_optimal(self):
-        loaded_data = np.load(self.q_values_optimal, allow_pickle=True).item()
+        loaded_data = np.load(self.q_values_optimal_path, allow_pickle=True).item()
         # q_values_log = {(State().convert_to_loadable(state), action): value for (state, action), value in loaded_data.items()}
         q_values_log = {Sensors.convert_to_loadable(state): value for state, value in loaded_data.items()}
-        
+        # print(f'Loaded optimal q values: {q_values_log}')
         
         # q_values_log = State.from_np_load(loaded_data)
         return q_values_log

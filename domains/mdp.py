@@ -21,18 +21,19 @@ class Sensors():
         
     def eq(self, other_state):
         """Determine if two states are equal"""
-        return (
+        
+        eq = (
             self.key_found == other_state.key_found and
             self.hole_sensor == other_state.hole_sensor and
             self.beams_sensor == other_state.beams_sensor and
             self.key_sensor == other_state.key_sensor and
             self.lock_sensor == other_state.lock_sensor
         )
+        return eq 
+
 
     def __eq__(self, other):
         """Overwriting '==' operator"""
-        if not isinstance(other, Sensors):
-            return False
         return self.eq(other)  
     def __hash__(self):
         """Use a tuple of the relevant attributes for hashing"""
@@ -42,7 +43,8 @@ class Sensors():
     @staticmethod    
     def convert_to_loadable( data):
         """Crates a structure that can be saved in .npy file"""
-        returner = Sensors(data[0], data[1], data[2], data[3], data[4])
+        converted_data = [list(item) if isinstance(item, (tuple, list)) else item for item in data]
+        returner = Sensors(*converted_data)
         return returner
 
     def to_np_save(self):
@@ -52,16 +54,26 @@ class Sensors():
         return state_logger
     pass
 
+    # def __str__(self):
+        
+    #     beams = st.mean(self.beams_sensor)
+    #     key = st.mean(self.key_sensor)
+    #     lock = st.mean(self.lock_sensor)
+    #     pit = any(self.hole_sensor)
+        
+        
+    #     return (f"{beams},{key}, {lock}, {pit}, {self.key_found} ---- ")
+
     def __str__(self):
         
-        beams = st.mean(self.beams_sensor)
-        key = st.mean(self.key_sensor)
-        lock = st.mean(self.lock_sensor)
-        pit = any(self.hole_sensor)
+        
+        beams = (self.beams_sensor)
+        key =(self.key_sensor)
+        lock = (self.lock_sensor)
+        pit = (self.hole_sensor)
         
         
         return (f"{beams},{key}, {lock}, {pit}, {self.key_found} ---- ")
-
 
 class State():
     """Represents position and sensors """
@@ -209,6 +221,8 @@ class MDP(list):
             self.init_state = State()
         else:
             self.init_state = init_state
+        
+        self.q_agent = None
         
         # Initialize the Grid
         self.grid = Grid()

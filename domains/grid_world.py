@@ -13,7 +13,7 @@ class PygameInstance():
 
     # Colors
     GROUND_COLOR = (255, 255, 255)
-    PLAYER_COLOR = (255, 0, 0)
+    PLAYER_COLOR = (255, 0, 255)
     KEY_COLOR = (255, 255, 0)
     CHEST_COLOR = (0, 255, 255)
     CACTUS_COLOR = (0, 255, 0)
@@ -85,8 +85,10 @@ class PygameInstance():
                         sys.exit()
                     if event.key == pygame.K_w:
                         go_to_optimal_event.set()
-                        reset_event.set()
-                    
+                        # reset_event.set()
+                        reset_event.set_value("policy")
+                        reset()  
+                            
 
             # Happens when the run_mdp loop signals the mdp episode has ended
             if reset_event.is_set():
@@ -95,19 +97,8 @@ class PygameInstance():
                 
             # Draw the grid
             screen.fill(self.GROUND_COLOR)
-            for row in range(GRID_HEIGHT):
-                for col in range(GRID_WIDTH):
-                    pygame.draw.rect(screen, self.PLAYER_COLOR, (col * self.GRID_SIZE, row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE), 1)
-
-                # Draw the key based on if the player have collided with it or not
-                # if not grid.key.coordinate:
-                #     pygame.draw.rect(screen, self.KEY_COLOR, (key_pos[0] * self.GRID_SIZE, key_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
-                # elif grid.key.coordinate:
-                #     pygame.draw.rect(screen, self.GROUND_COLOR,
-                #                     (key_pos[0] * self.GRID_SIZE, key_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
-
-
-            #Draw the key
+            
+                #Draw the key
             if not self.mdp.agent.state.key_found:
                 pygame.draw.rect(screen, self.KEY_COLOR, (key_pos[0] * self.GRID_SIZE, key_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
 
@@ -123,7 +114,65 @@ class PygameInstance():
                 pygame.draw.rect(screen, self.HOLE_COLOR, (hole[0] * self.GRID_SIZE, hole[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
 
             
+            
+            for row in range(GRID_HEIGHT):
+                for col in range(GRID_WIDTH):
+                    # pygame.draw.rect(screen, self.PLAYER_COLOR, (col * self.GRID_SIZE, row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE), 1)
+                    cell_rect = pygame.Rect(col * self.GRID_SIZE, row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
+                    # Draw the cell border
+                    pygame.draw.rect(screen, self.PLAYER_COLOR, cell_rect, 1)
+                    
+                    
+
+                    # Get the Q-values for the current cell
+                    # cell_q_values = self.information_parser["q_values"][row][col]
+                    cell_q_values = self.information_parser["q_values_grid"][col][row]
+                    if not all(value == 0.0 for value in cell_q_values.values()):
+                        # Handle the case where all values are 0.0 (no arrows needed)
+                    # Find the action with the highest Q-value
+                                # Find the action with the highest Q-value
+                        max_value = max(cell_q_values.values())
+                        max_actions = [action for action, value in cell_q_values.items() if value == max_value]
+
+                        # Use a different color if more than one action has the same max Q-value
+                        arrow_color = (200, 200, 200)  # Default color
+                        if len(max_actions) > 1:
+                            # arrow_color = (0, 0, 255)  # Blue for example
+                            arrow_color = "#8f9eff"  # Blue for example
+
+                        # Draw arrows based on the highest Q-value action
+                        arrow_size = self.GRID_SIZE // 6
+                        if max_actions[0] == 0:  # Up
+                            pygame.draw.polygon(screen, arrow_color, [(cell_rect.centerx, cell_rect.centery - arrow_size),
+                                                                    (cell_rect.centerx + arrow_size, cell_rect.centery + arrow_size),
+                                                                    (cell_rect.centerx - arrow_size, cell_rect.centery + arrow_size)])
+                        elif max_actions[0] == 1:  # Right
+                            pygame.draw.polygon(screen, arrow_color, [(cell_rect.centerx + arrow_size, cell_rect.centery),
+                                                                    (cell_rect.centerx - arrow_size, cell_rect.centery + arrow_size),
+                                                                    (cell_rect.centerx - arrow_size, cell_rect.centery - arrow_size)])
+                        elif max_actions[0] == 2:  # Down
+                            pygame.draw.polygon(screen, arrow_color, [(cell_rect.centerx, cell_rect.centery + arrow_size),
+                                                                    (cell_rect.centerx + arrow_size, cell_rect.centery - arrow_size),
+                                                                    (cell_rect.centerx - arrow_size, cell_rect.centery - arrow_size)])
+                        elif max_actions[0] == 3:  # Left
+                            pygame.draw.polygon(screen, arrow_color, [(cell_rect.centerx - arrow_size, cell_rect.centery),
+                                                                    (cell_rect.centerx + arrow_size, cell_rect.centery + arrow_size),
+                                                                    (cell_rect.centerx + arrow_size, cell_rect.centery - arrow_size)])
+                    """
+                    """
+
+                # Draw the key based on if the player have collided with it or not
+                # if not grid.key.coordinate:
+                #     pygame.draw.rect(screen, self.KEY_COLOR, (key_pos[0] * self.GRID_SIZE, key_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
+                # elif grid.key.coordinate:
+                #     pygame.draw.rect(screen, self.GROUND_COLOR,
+                #                     (key_pos[0] * self.GRID_SIZE, key_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
+
+
+        
+            
             player_rect = pygame.Rect(player_pos[0] * self.GRID_SIZE, player_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
+            # print(f'Player pos: {player_pos}')
             # pygame.draw.rect(screen, self.PLAYER_COLOR, player_rect)
             player_center = (player_rect.x + player_rect.width // 2, player_rect.y + player_rect.height // 2)
             pygame.draw.circle(screen, self.PLAYER_COLOR, player_center, self.GRID_SIZE // 4)
