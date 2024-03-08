@@ -58,10 +58,10 @@ class QLearningAgent:
             q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
             max_q_value = max(q_values)
             max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
-            # if q_values != [0.0,0.0,0.0,0.0]:
-            #     print(f'Q values: {q_values}')            
-            #     print(f'max Q values: {max_q_value}')            
-            #     print(f'max Q action: {max_q_indices}')            
+            if q_values != [0.0,0.0,0.0,0.0]:
+                print(f'Q values: {q_values}')
+                print(f'max Q values: {max_q_value}')
+                print(f'max Q action: {max_q_indices}')
 
             # Randomly choose one of the actions with the maximum Q-value
             chosen_action = random.choice(max_q_indices)
