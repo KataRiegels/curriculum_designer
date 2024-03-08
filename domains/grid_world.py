@@ -37,7 +37,6 @@ class PygameInstance():
         
         # sets everything to the initial values matching the mdp
         def reset():
-            print(f"ran reset")
             self.got_key = self.mdp.agent.state.key_found
             self.player_pos = self.mdp.agent.state.coordinate
             self.grid = self.mdp.grid
@@ -88,8 +87,7 @@ class PygameInstance():
 
             # Happens when the run_mdp loop signals the mdp episode has ended
             if reset_event.is_set():
-                print("MDP has ended")  
-                reset()  
+                reset()
                 reset_event.clear()
                 
             # Draw the grid

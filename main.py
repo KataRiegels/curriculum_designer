@@ -7,6 +7,7 @@ sys.path.append(path)
 print("--SCRIPT STARTING")
 from algorithm.q_learning import *
 from algorithm.sarsa import *
+from algorithm.success_tracker import *
 from domains.features import *
 from domains.mdp import *
 from domains.task_generators import *
@@ -30,9 +31,10 @@ learning_alg = "Sarsa"
 learning_alg = "QLearning"
 
 if learning_alg == "QLearning":
-    q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+    q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
 if learning_alg == "Sarsa":
-    q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+    q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
+
 
 use_pg = True
 
@@ -70,7 +72,9 @@ class Tracker():
         self.information_parser["action log"] = self.actions_logger
         
         self.q_values_log = []
-        
+
+        self.success_tracker = SuccessTracker(success_threshhold=5)
+
         if load_q:
             q_values = self.logger.load_q_values_log()
             self.q_agent.q_values = q_values
@@ -83,7 +87,7 @@ class Tracker():
         accu_reward = 0
         while not self.stop_event.is_set():
 
-            # time.sleep(.5)
+            #time.sleep(.1)
             
             # Current state before moving
             current_state = self.mdp.agent.state.copy()
@@ -143,20 +147,34 @@ class Tracker():
             if learning_alg == "Sarsa":
                 next_action = self.q_agent.choose_action(new_sensors)
                 self.q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
-                current_state = new_state
-                action = next_action
 
+            #This might need to be changed to "current_sensor" instead of "current_state"
+            self.success_tracker.update_path(current_state)
 
-            
             q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
 
-
-
             # If the MDP ended (aka agent reached terminal state)
             if self.mdp.mdp_ended == True:
-                print("Restarting MDP")
-                
+                #print("Restarting MDP")
+                current_path = self.success_tracker.current_path
+                #if self.success_tracker.track_success(current_path):
+                if self.success_tracker.previous_path.copy() == current_path:
+                    self.success_tracker.path_count += 1
+                    if self.success_tracker.path_count < self.success_tracker.success_threshhold:
+                        print(self.success_tracker.path_count)
+                        print(f'Same path taken {self.success_tracker.path_count} amount of times!')
+                        self.success_tracker.start_new_path()
+                    else:
+                        print(f'Same route taken {self.success_tracker.success_threshhold} amount of times! optimal policy found')
+                        break
+                else:
+                    self.success_tracker.path_count = 0
+                    self.success_tracker.start_new_path()
+                    #print("New route taken! Success criteria reset")
+
+                self.success_tracker.save_path(current_path)
+
                 # update reward logger and data to be able to plot it later
                 self.reward_logger.append(reward)
                 reward_data = [self.generation, accu_reward, self.mdp.term_cause ]
@@ -183,10 +201,10 @@ class Tracker():
                     self.information_parser['successes'] += 1
                 
                 # Printing generation information
-                print(f'Generation information:\
-                        \n Generation number: {self.generation} \
-                            \n Interaction steps: {self.mdp.interaction_number}\
-                                \n Termination cause: {self.mdp.term_cause}')
+                # print(f'Generation information:\
+                #         \n Generation number: {self.generation} \
+                #             \n Interaction steps: {self.mdp.interaction_number}\
+                #                 \n Termination cause: {self.mdp.term_cause}')
                 
                 # Log data for the terminated MDP
                 self.logger.write_to_csv("episode_data", term_data)
@@ -198,7 +216,7 @@ class Tracker():
                 self.mdp = self.mdp_copy.copy()
                 self.pg.mdp = self.mdp
                 # time.sleep(3)
-                    
+
                 self.reset_event.set()
             self.q_values_log = q_agent.q_values
 

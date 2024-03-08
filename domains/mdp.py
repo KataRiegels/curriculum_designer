@@ -253,7 +253,7 @@ class MDP(list):
             self.agent.state.key_found == True
             new_state.key_found = True
             self.grid.assign_cell(new_state.coordinate, None)        
-            print("Key found")
+            #print("Key found")
         
         # check for terminal states
         self.check_termination(new_state)
@@ -271,7 +271,7 @@ class MDP(list):
         """ Call to end current mdp due to termination """
         self.mdp_ended = True
         self.term_cause = cause
-        print(f'Number of interactions: {self.interaction_number} due to {cause}')
+        #print(f'Number of interactions: {self.interaction_number} due to {cause}')
         return True
 
     def check_termination(self, state):
@@ -301,7 +301,7 @@ class MDP(list):
         elif cell_type == "hole" :
             reward = -200
         elif cell_type == "lock" and state.key_found == True:
-            print(f'Unlocked lock with key!')
+            #print(f'Unlocked lock with key!')
             reward = 1000
         else:
             reward = -1
