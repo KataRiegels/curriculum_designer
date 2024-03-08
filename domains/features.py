@@ -97,7 +97,7 @@ class Hole(Feature):
         self.hole_coordinates = []  
     
     def get_simplified(self) -> Feature:
-        randint = rand.randint(0,self.width - 1)
+        randint = rand.randint(1,self.width - 1)
         if randint == 0:
             self.exists = False
             return self

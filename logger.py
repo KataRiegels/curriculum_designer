@@ -15,6 +15,7 @@ class Logger():
             self.csv_managers[csv.file_name] = csv
         
         self.q_values_log_path = "q_values_log.npy"
+        self.q_values_optimal = "q_values_optimal.npy"
         
         
     def write_to_csv(self, file_name, data):
@@ -26,12 +27,30 @@ class Logger():
         for csv in self.csv_managers.values():
             csv.csv_file.close()    
         
-    def save_q_values_log(self, q_values_log):
+    def save_optimal_q_values(self, q_values_path, q_values_log):
         # return
+        # Convert State objects to a hashable representation (e.g., tuple)
+        self.q_values_optimal = q_values_path
+        q_values_log_serializable = {state.to_np_save(): value for state, value in q_values_log.items()}
+        # print(f'q log: {q_values_log_serializable}')
+        np.save(q_values_path, np.array(q_values_log_serializable))
+
+    def load_q_values_optimal(self):
+        loaded_data = np.load(self.q_values_optimal, allow_pickle=True).item()
+        # q_values_log = {(State().convert_to_loadable(state), action): value for (state, action), value in loaded_data.items()}
+        q_values_log = {Sensors.convert_to_loadable(state): value for state, value in loaded_data.items()}
+        
+        
+        # q_values_log = State.from_np_load(loaded_data)
+        return q_values_log
+        
+    def save_q_values_log(self, q_values_path, q_values_log):
+        # return
+        self.q_values_log_path = q_values_path
         # Convert State objects to a hashable representation (e.g., tuple)
         q_values_log_serializable = {(state.to_np_save(), action): value for (state, action), value in q_values_log.items()}
         # print(f'q log: {q_values_log_serializable}')
-        np.save(self.q_values_log_path, np.array(q_values_log_serializable))
+        np.save(q_values_path, np.array(q_values_log_serializable))
 
     def load_q_values_log(self):
         loaded_data = np.load(self.q_values_log_path, allow_pickle=True).item()
@@ -96,6 +115,11 @@ class Plotter():
             
         self.plot_single_bar_chart(data[0], data[1], data[2], csv_manager.file_name)
         pass
+    
+    def plot_double(self):
+        pass
+    
+    
 
     def plot_single_bar_chart(self, generations, interactions, term_causes, title):
         # Color bars based on termination cause

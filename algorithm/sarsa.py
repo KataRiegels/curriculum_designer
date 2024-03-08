@@ -1,6 +1,6 @@
 import random
 import numpy as np
-
+import copy
 
 class SarsaAgent:
     def __init__(self, max_training_episodes, max_steps, state_space_size, action_space_size, learning_rate,
@@ -16,6 +16,7 @@ class SarsaAgent:
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
         self.exploration_rate = exploration_rate
+        self.use_optimal = False
 
     # def get_q_value(self, state, action):
     #     # Retrieve Q-value from the Q-table
@@ -49,6 +50,9 @@ class SarsaAgent:
 
     def choose_action(self, state):
         # Epsilon-greedy policy for action selection
+        
+        if self.use_optimal: return self.choose_policy_action(state)
+        
         if random.uniform(0, 1) < self.exploration_rate:
             action = random.choice(range(self.action_space_size))
             return action
@@ -70,3 +74,62 @@ class SarsaAgent:
             self.exploration_rate -= 0.0000001
             return chosen_action
         # print(self.exploration_rate)
+    def get_unique_states(self):
+        unique_states = set()
+
+        for (state, _), _ in self.q_values.items():
+            unique_states.add(state)
+
+        return list(unique_states)       
+        
+    def get_q_values_for_state(self, state):
+        # Retrieve all Q-values for a specific state
+        q_values_for_state = {action: self.get_q_value(state, action) for action in range(self.action_space_size)}
+        return q_values_for_state
+
+    def get_optimal_policy(self):
+        optimal_policy = {}
+
+        # Iterate over all unique states
+        for state in self.get_unique_states():
+            # Get Q-values for the current state
+            q_values_for_state = self.get_q_values_for_state(state)
+
+            # Determine the optimal action based on Q-values
+            optimal_action = max(q_values_for_state, key=q_values_for_state.get)
+
+            # Store the optimal action for the current state
+            optimal_policy[state] = optimal_action
+
+        return optimal_policy
+
+    def set_q_values_from_policy(self, optimal_policy):
+        self.q_values = {}
+        if self.use_optimal:
+            for state, optimal_action in optimal_policy.items():
+                for action in range(self.action_space_size):
+                    q_value = 1.0 if action == optimal_action else 0.0  # Set Q-value to 1 for optimal action, 0 otherwise
+                    self.q_values[(state, action)] = q_value
+        # print(f'q values: {self.q_values}')
+                    
+    def choose_policy_action(self, state):
+        # Epsilon-greedy policy for action selection
+            # state_tuple = tuple(state)
+        # Choose the action with the highest Q-value
+        print(state)
+        q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
+        max_q_value = max(q_values)
+        max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
+        if q_values != [0.0, 0.0, 0.0, 0.0]:
+            print(f'Q values: {q_values}')
+
+            # Randomly choose one of the actions with the maximum Q-value
+        chosen_action = random.choice(max_q_indices)
+
+        return chosen_action
+    
+    
+    def copy(self):
+        # Create a deep copy of the agent
+        
+        return copy.deepcopy(self)

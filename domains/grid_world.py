@@ -31,13 +31,12 @@ class PygameInstance():
     def reset_map(self):
         pass
 
-    def start_game_mdp(self, stop_event, reset_event):
+    def start_game_mdp(self, stop_event, reset_event, go_to_optimal_event):
         
         self.text_render_number = 0
         
         # sets everything to the initial values matching the mdp
         def reset():
-            print(f"ran reset")
             self.got_key = self.mdp.agent.state.key_found
             self.player_pos = self.mdp.agent.state.coordinate
             self.grid = self.mdp.grid
@@ -84,11 +83,13 @@ class PygameInstance():
                         stop_event.set()
                         pygame.quit()
                         sys.exit()
+                    if event.key == pygame.K_w:
+                        go_to_optimal_event.set()
+                        reset_event.set()
                     
 
             # Happens when the run_mdp loop signals the mdp episode has ended
             if reset_event.is_set():
-                print("MDP has ended")  
                 reset()  
                 reset_event.clear()
                 

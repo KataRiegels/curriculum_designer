@@ -3,7 +3,8 @@ from __future__ import annotations
 from grid_representation import *
 from features import *
 import random as rand
-
+import math
+import statistics as st
 
 class Sensors():
     """ Class that essentially just keeps the sensor part of a state"""
@@ -41,7 +42,7 @@ class Sensors():
     @staticmethod    
     def convert_to_loadable( data):
         """Crates a structure that can be saved in .npy file"""
-        returner = State(data[0], data[1], data[2], data[3], data[4])
+        returner = Sensors(data[0], data[1], data[2], data[3], data[4])
         return returner
 
     def to_np_save(self):
@@ -50,6 +51,17 @@ class Sensors():
                      tuple(self.key_sensor), tuple(self.lock_sensor))
         return state_logger
     pass
+
+    def __str__(self):
+        
+        beams = st.mean(self.beams_sensor)
+        key = st.mean(self.key_sensor)
+        lock = st.mean(self.lock_sensor)
+        pit = any(self.hole_sensor)
+        
+        
+        return (f"{beams},{key}, {lock}, {pit}, {self.key_found} ---- ")
+
 
 class State():
     """Represents position and sensors """
@@ -253,7 +265,6 @@ class MDP(list):
             self.agent.state.key_found == True
             new_state.key_found = True
             self.grid.assign_cell(new_state.coordinate, None)        
-            print("Key found")
         
         # check for terminal states
         self.check_termination(new_state)
@@ -264,6 +275,19 @@ class MDP(list):
         
         return [(new_state, p)]
 
+    def take_action(self, action):
+        reward = self.R(self.agent.state, action)
+        next_state = self.P(self.agent.state, action)[0][0]
+        done = self.mdp_ended
+
+        self.agent.state = next_state
+        self.update_state()
+        
+        
+        
+        return next_state, reward, done
+        pass
+
     def transition(self, state : State, action : str):
         return self.P(state, action)
 
@@ -271,7 +295,6 @@ class MDP(list):
         """ Call to end current mdp due to termination """
         self.mdp_ended = True
         self.term_cause = cause
-        print(f'Number of interactions: {self.interaction_number} due to {cause}')
         return True
 
     def check_termination(self, state):
@@ -301,7 +324,6 @@ class MDP(list):
         elif cell_type == "hole" :
             reward = -200
         elif cell_type == "lock" and state.key_found == True:
-            print(f'Unlocked lock with key!')
             reward = 1000
         else:
             reward = -1
