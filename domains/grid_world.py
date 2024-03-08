@@ -13,7 +13,7 @@ class PygameInstance():
 
     # Colors
     GROUND_COLOR = (255, 255, 255)
-    PLAYER_COLOR = (255, 0, 0)
+    PLAYER_COLOR = (255, 0, 255)
     KEY_COLOR = (255, 255, 0)
     CHEST_COLOR = (0, 255, 255)
     CACTUS_COLOR = (0, 255, 0)
@@ -85,7 +85,8 @@ class PygameInstance():
                         sys.exit()
                     if event.key == pygame.K_w:
                         go_to_optimal_event.set()
-                        reset_event.set()
+                        # reset_event.set()
+                        reset_event.set_value("policy")
                         reset()  
                             
 
@@ -134,26 +135,27 @@ class PygameInstance():
                         max_actions = [action for action, value in cell_q_values.items() if value == max_value]
 
                         # Use a different color if more than one action has the same max Q-value
-                        arrow_color = (0, 0, 0)  # Default color
+                        arrow_color = (200, 200, 200)  # Default color
                         if len(max_actions) > 1:
-                            arrow_color = (0, 0, 255)  # Blue for example
+                            # arrow_color = (0, 0, 255)  # Blue for example
+                            arrow_color = "#8f9eff"  # Blue for example
 
                         # Draw arrows based on the highest Q-value action
-                        arrow_size = self.GRID_SIZE // 4
+                        arrow_size = self.GRID_SIZE // 6
                         if max_actions[0] == 0:  # Up
                             pygame.draw.polygon(screen, arrow_color, [(cell_rect.centerx, cell_rect.centery - arrow_size),
                                                                     (cell_rect.centerx + arrow_size, cell_rect.centery + arrow_size),
                                                                     (cell_rect.centerx - arrow_size, cell_rect.centery + arrow_size)])
                         elif max_actions[0] == 1:  # Right
-                            pygame.draw.polygon(screen, (0, 0, 0), [(cell_rect.centerx + arrow_size, cell_rect.centery),
+                            pygame.draw.polygon(screen, arrow_color, [(cell_rect.centerx + arrow_size, cell_rect.centery),
                                                                     (cell_rect.centerx - arrow_size, cell_rect.centery + arrow_size),
                                                                     (cell_rect.centerx - arrow_size, cell_rect.centery - arrow_size)])
                         elif max_actions[0] == 2:  # Down
-                            pygame.draw.polygon(screen, (0, 0, 0), [(cell_rect.centerx, cell_rect.centery + arrow_size),
+                            pygame.draw.polygon(screen, arrow_color, [(cell_rect.centerx, cell_rect.centery + arrow_size),
                                                                     (cell_rect.centerx + arrow_size, cell_rect.centery - arrow_size),
                                                                     (cell_rect.centerx - arrow_size, cell_rect.centery - arrow_size)])
                         elif max_actions[0] == 3:  # Left
-                            pygame.draw.polygon(screen, (0, 0, 0), [(cell_rect.centerx - arrow_size, cell_rect.centery),
+                            pygame.draw.polygon(screen, arrow_color, [(cell_rect.centerx - arrow_size, cell_rect.centery),
                                                                     (cell_rect.centerx + arrow_size, cell_rect.centery + arrow_size),
                                                                     (cell_rect.centerx + arrow_size, cell_rect.centery - arrow_size)])
                     """
