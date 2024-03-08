@@ -27,8 +27,8 @@ feature_vector = Features(GridSize(), Hole(exists = True))
 old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
 
-learning_alg = "Sarsa"
 learning_alg = "QLearning"
+learning_alg = "Sarsa"
 
 if learning_alg == "QLearning":
     q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
@@ -118,25 +118,6 @@ class Tracker():
             new_state = self.mdp.agent.state.copy()
             new_sensors = new_state.sensors
             
-            # old_q_value = self.q_agent.get_q_value(current_state, action)
-            
-            # calculate reward corresponding to taking the decided action
-            
-            # Calculate new q value
-            # new_q_value = old_q_value + self.q_agent.learning_rate * (reward + self.q_agent.discount_factor * max(self.q_agent.get_q_value(new_state.coordinate, a) for a in range(self.q_agent.action_space_size)) - old_q_value)
-
-            # For Q-learning
-            # new_q_value = old_q_value + \
-            #     self.q_agent.learning_rate * (
-            #         reward +
-            #         self.q_agent.discount_factor * max(
-            #             # self.q_agent.get_q_value(new_state, a)
-            #             self.q_agent.get_q_value(new_sensors, a)
-            #             for a in range(self.q_agent.action_space_size)
-            #         ) - old_q_value
-            #     )
-            #new_q_value = q_agent.get_updated_q_value(new_sensors, accu_reward, old_q_value, q_agent.learning_rate, q_agent.discount_factor, q_agent.action_space_size)
-
 
             
             #For Q-learning - Implement if Q-learning is used
@@ -232,7 +213,7 @@ plotting = True
 
 # determines whether or not to use saved q values
 get_q_values = True
-get_q_values = False
+# get_q_values = False
 
 # q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
 

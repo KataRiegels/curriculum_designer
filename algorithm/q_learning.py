@@ -44,7 +44,7 @@ class QLearningAgent:
         target_q_value = reward + self.discount_factor * max(self.get_q_value(next_state, action) for a in range(self.action_space_size))
         new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
 
-        self.q_values[(state, action)] = new_q_value
+        # self.q_values[(state, action)] = new_q_value
 
     def choose_action(self, state):
         # Epsilon-greedy policy for action selection
@@ -68,4 +68,3 @@ class QLearningAgent:
 
             self.exploration_rate -= 0.0000001
             return chosen_action
-        #print(self.exploration_rate)
