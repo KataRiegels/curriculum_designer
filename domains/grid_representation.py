@@ -101,6 +101,9 @@ class Grid():
             distance = math.sqrt((cell.x - agent_x)**2 + (cell.y - agent_y)**2)
             min_distance = min(min_distance, distance)
 
+            # if sensor_type == "hole":
+            #     print(f'min dist: {min_distance}')
+
         return round(min_distance, 2)
  
     def is_hole_adjacent(self, coordinate):

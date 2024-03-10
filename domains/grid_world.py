@@ -129,8 +129,6 @@ class PygameInstance():
                     cell_q_values = self.information_parser["q_values_grid"][col][row]
                     if not all(value == 0.0 for value in cell_q_values.values()):
                         # Handle the case where all values are 0.0 (no arrows needed)
-                    # Find the action with the highest Q-value
-                                # Find the action with the highest Q-value
                         max_value = max(cell_q_values.values())
                         max_actions = [action for action, value in cell_q_values.items() if value == max_value]
 

@@ -89,6 +89,15 @@ class State():
         self.beams_sensor = beams_sensor
         self.key_sensor = key_sensor
         self.lock_sensor = lock_sensor
+        self.hole_distance = None
+        self.beams_distance = None
+        self.key_distance = None
+        self.lock_distance = None
+        
+    
+    @property
+    def distances(self):
+        pass
     
     @property        
     def sensors(self):
@@ -111,6 +120,10 @@ class State():
         new_state.beams_sensor = self.beams_sensor.copy()
         new_state.key_sensor = self.key_sensor.copy()
         new_state.lock_sensor = self.lock_sensor.copy()
+        new_state.hole_distance = self.hole_distance
+        new_state.beams_distance = self.beams_distance
+        new_state.key_distance = self.key_distance
+        new_state.lock_distance = self.lock_distance
         return new_state
     
     
@@ -164,7 +177,7 @@ class Agent():
     def update_sensors(self, grid : Grid):
         """ Updates the different agent sensors, e.g. key distance"""
         hole_sensor = []; beams_sensor = []
-        keý_sensor = [];  lock_sensor = []
+        key_sensor = [];  lock_sensor = []
         
         # Update sensors from each possible action
         for action in ["up", "down", "left", "right"]:
@@ -179,12 +192,17 @@ class Agent():
             
             hole_sensor.append(hole_distance)
             beams_sensor.append(beams_distance)
-            keý_sensor.append(key_distance)
+            key_sensor.append(key_distance)
             lock_sensor.append(lock_distance)
+        
+        self.state.hole_distance = grid.distance_to_nearest(agent=self.state.coordinate, sensor_type='hole')
+        self.state.beams_distance = grid.distance_to_nearest(agent=self.state.coordinate, sensor_type='beams')
+        self.state.key_distance = grid.distance_to_nearest(agent=self.state.coordinate, sensor_type='key')
+        self.state.lock_distance = grid.distance_to_nearest(agent=self.state.coordinate, sensor_type='lock')
         
         
         # Add to the state's sensors    
-        self.state.key_sensor = keý_sensor    
+        self.state.key_sensor = key_sensor    
         self.state.lock_sensor = lock_sensor
         self.state.hole_sensor = hole_sensor
         self.state.beams_sensor = beams_sensor
@@ -197,6 +215,31 @@ class Agent():
     def take_action(self, action = None):
         act = rand.choice(["left", "right", "up", "down"])
         return act 
+ 
+def termination_key(state : State):
+    if state.key_distance == 0.0:
+        return "key"
+    else:
+        return False    
+    
+def termination_pit(state : State):
+    # print(f'pit termination??')
+    if (state.hole_distance == 0.0):
+        if state.key_found:
+            return "holekey"
+        return "hole"
+    else:
+        return False    
+
+def termination_lock(state : State):
+    if state.lock_distance == 0.0 and state.key_found:
+        return "lock"
+    else:
+        return False    
+
+
+
+ 
  
 class MDP(list):
     """ Class that represents an episodic Markov Decision Process, aka "task" """
@@ -214,7 +257,7 @@ class MDP(list):
     def copy(self):
         return MDP(init_state = self.init_state, features = self.features, run_with_print = self.run_with_print)
     
-    def __init__(self, init_state = None, features : Features = None, run_with_print = False):
+    def __init__(self, init_state = None, features : Features = None, run_with_print = False, terminations = []):
         
         # set the initial state
         if init_state == None:
@@ -222,6 +265,14 @@ class MDP(list):
         else:
             self.init_state = init_state
         
+        self.terminations = terminations
+        if len(terminations) == 0:
+            self.terminations.append(termination_pit)
+        if len(terminations) == 1:
+            self.terminations.append(termination_lock)
+        # else: 
+        #     for t_cause in terminations:
+        #         self.terminations.append(t_cause)
         self.q_agent = None
         
         # Initialize the Grid
@@ -281,7 +332,9 @@ class MDP(list):
             self.grid.assign_cell(new_state.coordinate, None)        
         
         # check for terminal states
-        self.check_termination(new_state)
+        self.check_termination_2(new_state)
+        # self.check_termination(new_state)
+
         
         # currently always sure?
         p = 1
@@ -310,18 +363,59 @@ class MDP(list):
         self.mdp_ended = True
         self.term_cause = cause
         return True
+    def check_termination_2(self, state):
+        current_cell_type = self.grid.check_coordinate(state.coordinate)
+        for func in self.terminations:
+            term_cause = func(state)
+            if term_cause:
+                self.end_mdp(cause=term_cause)
+                return       
+        # while (term == False):        
+        # if term == ("lock"):
+        # Agent fell into the pit or unlocked the lock
+        # if (current_cell_type == "hole" and state.key_found):
+        #     self.end_mdp(cause = "holekey")            
+            
+        # elif (current_cell_type == "hole"):
+        #     self.end_mdp(cause = current_cell_type)
+              
+        # elif (current_cell_type == "lock" and state.key_found):
+        #     self.end_mdp(cause = current_cell_type)
 
+
+
+
+                        
     def check_termination(self, state):
         """ checks and handles when a state leads to termination """
         current_cell_type = self.grid.check_coordinate((state.coordinate))
         
         # Agent fell into the pit or unlocked the lock
         if (current_cell_type == "hole" and state.key_found):
+            print(f'term1')
             self.end_mdp(cause = "holekey")            
             
         elif (current_cell_type == "hole" \
                 or current_cell_type == "lock" and state.key_found):
+            print(f'term1')
             self.end_mdp(cause = current_cell_type)            
+    
+    # def termination_lock(self, state):
+    #     current_cell_type = self.grid.check_coordinate((state.coordinate))
+    #     if (current_cell_type == "lock" and state.key_found):
+    #         self.end_mdp(cause = current_cell_type)            
+        
+    
+    # def termination_pit(self, state):
+    #     current_cell_type = self.grid.check_coordinate((state.coordinate))
+    #     if (current_cell_type == "hole"):
+    #         if state.key_found:
+    #             self.end_mdp(cause = "holekey")
+    #         else: 
+    #             self.end_mdp(cause = current_cell_type)            
+    
+    # def termination_lock(self, state):
+    #     pass    
     
     def R(self, state : State, action : str) -> float:
         """ Reward function """
@@ -331,8 +425,15 @@ class MDP(list):
         new_state   = sa.move(self.grid)
         reward = 0
         
+        reward = self.value_function(new_state, self.grid)
+                
+        return reward*(1)
+
+    @staticmethod        
+    def value_function(state, grid):
         # Reward based off the cell type
-        cell_type = self.grid.check_coordinate((new_state.coordinate))
+        reward = 0
+        cell_type = grid.check_coordinate((state.coordinate))
         if cell_type == "key":
             reward == 500
         elif cell_type == "hole" :
@@ -340,9 +441,8 @@ class MDP(list):
         elif cell_type == "lock" and state.key_found == True:
             reward = 1000
         else:
-            reward = -1
-                
-        return reward*(1)
+            reward = -10
+        return reward
         
     def __str__(self):
         """How the class is represented when e.g. printed"""
@@ -384,5 +484,5 @@ class SA():
                 return new_state
             new_state.y += 1            
         
-        
+        # if self.action ==''
         return new_state

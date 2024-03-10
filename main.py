@@ -22,6 +22,7 @@ go_to_optimal_event = threading.Event()
 
 # creates target task and simplified version
 feature_vector = Features(GridSize(), Hole(exists = True))
+# old_mdp = MDP(features = feature_vector, run_with_print=True, terminations = [termination_pit])
 old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = old_mdp
 # mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
@@ -36,6 +37,7 @@ if learning_alg == "Sarsa":
     q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
     # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.0)
 
+
 use_pg = True
 
 
@@ -49,8 +51,8 @@ class Tracker():
         
         # Initialize attributes with default
         self.generation_manager = []; self.generation = 0; self.reward_logger = []
-        self.information_parser = {}; self.q_values_log = []
-        
+        self.information_parser = {}; self.q_values_log = []; self.samples = X()
+        self.q_value_log_trigger = False
         
         self.mdp = mdp; self.mdp_copy = self.mdp.copy()
         q_values_dummy = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
@@ -80,7 +82,6 @@ class Tracker():
         self.accu_reward = 0
         self.mdp = self.mdp_copy.copy()
         self.pg.mdp = self.mdp
-        
         while not self.stop_event.is_set():
         # while self.while_condition(q_agent):
             self.information_parser["q_agent"] = q_agent
@@ -161,8 +162,9 @@ class Tracker():
         self.q_values_log = self.q_agent.q_values
         self.optimal_policy = self.q_agent.get_optimal_policy()
         self.logger.save_q_values_log("q_values_log.npy", self.q_values_log)
-        self.logger.save_optimal_q_values("q_values_optimal.npy", self.optimal_policy)
-        
+        if self.q_value_log_trigger:
+            self.logger.save_optimal_q_values("q_values_optimal.npy", self.optimal_policy)
+            
         
         # Reading values
         self.optimal_policy = self.logger.load_q_values_optimal()
@@ -217,7 +219,12 @@ class Tracker():
             self.information_parser['fails'] += 1
         elif self.mdp.term_cause == "lock":
             self.information_parser['successes'] += 1
-
+            
+        if ((self.information_parser["fails"]+self.information_parser["successes"]) != 0):
+            fail_success = self.information_parser["successes"]/(self.information_parser["fails"]+self.information_parser["successes"])
+            if fail_success > 0.7:
+                self.q_value_log_trigger
+                
     def while_condition(self, q_agent):
         if q_agent.use_optimal:
             while_condition = not self.stop_event.is_set()

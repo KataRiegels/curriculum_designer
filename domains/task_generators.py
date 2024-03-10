@@ -3,6 +3,7 @@ from __future__ import annotations
 
 
 from mdp import *
+from samples import *
 from features import *
 import random as rand
 
@@ -27,6 +28,16 @@ def task_simplification(mdp : MDP):
             return new_mdp
         except:
             print("Simplification faled. Trying again") 
+            
+def option_sub_goals(mdp : MDP, X: X, treshold = None):
+    
+    pass
+
+def find_options():
+    pass
+
+def find_high_value_states():
+    pass
 
 
 
