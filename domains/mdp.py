@@ -5,6 +5,7 @@ from features import *
 import random as rand
 import math
 import statistics as st
+import copy
 
 class Sensors():
     """ Class that essentially just keeps the sensor part of a state"""
@@ -54,26 +55,26 @@ class Sensors():
         return state_logger
     pass
 
-    # def __str__(self):
-        
-    #     beams = st.mean(self.beams_sensor)
-    #     key = st.mean(self.key_sensor)
-    #     lock = st.mean(self.lock_sensor)
-    #     pit = any(self.hole_sensor)
-        
-        
-    #     return (f"{beams},{key}, {lock}, {pit}, {self.key_found} ---- ")
-
     def __str__(self):
         
+        beams = st.mean(self.beams_sensor)
+        key = st.mean(self.key_sensor)
+        lock = st.mean(self.lock_sensor)
+        pit = any(self.hole_sensor)
         
-        beams = (self.beams_sensor)
-        key =(self.key_sensor)
-        lock = (self.lock_sensor)
-        pit = (self.hole_sensor)
+        
+        return (f"beams: {beams},key: {key}, lock: {lock}, pit: {pit}, {self.key_found} ---- ")
+
+    # def __str__(self):
         
         
-        return (f"{beams},{key}, {lock}, {pit}, {self.key_found} ---- ")
+    #     beams = (self.beams_sensor)
+    #     key =(self.key_sensor)
+    #     lock = (self.lock_sensor)
+    #     pit = (self.hole_sensor)
+        
+        
+    #     return (f"beams: {beams},key: {key}, lock: {lock}, pit: {pit}, {self.key_found} ---- ")
 
 class State():
     """Represents position and sensors """
@@ -255,7 +256,10 @@ class MDP(list):
     grid_size = GridSize()
     
     def copy(self):
-        return MDP(init_state = self.init_state, features = self.features, run_with_print = self.run_with_print)
+        return copy.deepcopy(self)
+    
+    # def copy(self):
+    #     return MDP(init_state = self.init_state, features = self.features, run_with_print = self.run_with_print)
     
     def __init__(self, init_state = None, features : Features = None, run_with_print = False, terminations = []):
         
@@ -275,7 +279,7 @@ class MDP(list):
         #         self.terminations.append(t_cause)
         self.q_agent = None
         
-        self.specific_reward_values = None 
+        self.specific_reward_values = {} 
         self.terminal_states = None
         
         # Initialize the Grid
@@ -366,17 +370,20 @@ class MDP(list):
         self.mdp_ended = True
         self.term_cause = cause
         return True
-    def check_termination_2(self, state):
+    def check_termination_2(self, state : State):
         current_cell_type = self.grid.check_coordinate(state.coordinate)
+        if self.terminal_states:
+            for term_state in self.terminal_states:
+                # print(f'terminal state was:  {state.sensors} and {term_state}')
+                if state.sensors == term_state:
+                    print(f'terminal state was:  \n  Key: {state.key_distance}\
+                        \nlock: {state.lock_distance}')
+                    self.end_mdp(str(state))
         for func in self.terminations:
             term_cause = func(state)
             if term_cause:
                 self.end_mdp(cause=term_cause)
                 return       
-        if self.terminal_states:
-            for term_state in self.terminal_states:
-                if state == term_state:
-                    self.end_mdp(str(state))
         
         
         
@@ -435,10 +442,15 @@ class MDP(list):
         new_state   = sa.move(self.grid)
         reward = 0
         
-        if self.specific_reward_values == None:
-            reward = self.value_function(new_state, self.grid)
+        # if self.specific_reward_values == None:
+        #     reward = self.value_function(new_state, self.grid)
+        # else:
+        #     pass
+        key = (state.sensors, action, new_state.sensors)
+        if key in self.specific_reward_values:        
+            reward = self.specific_reward_values[(state.sensors, action, new_state.sensors)]
         else:
-            reward = self.specific_reward_values[state, action, new_state]
+            reward = self.value_function(new_state, self.grid)
                     
         return reward*(1)
 

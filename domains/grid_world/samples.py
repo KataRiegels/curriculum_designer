@@ -7,8 +7,8 @@ class X(list):
     def add_sample(self,old_state : State = None, action = None, new_state = None, reward = None ):
         self.append(Sample(old_state, action, new_state, reward))
     
-    # def add_sample(self, x : Sample):
-    #     self.append(x)
+    def add_sample(self, x : Sample):
+        self.append(x)
     pass
 
 

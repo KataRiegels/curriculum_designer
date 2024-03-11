@@ -12,6 +12,7 @@ from helpers import *
 import time
 import csv
 import pandas as pd
+import random
 import matplotlib.pyplot as plt
 from logger import Plotter, Logger, CsvManager
 
@@ -19,6 +20,7 @@ stop_event = threading.Event()
 # reset_event = threading.Event()
 reset_event = CustomEvent("learn")
 go_to_optimal_event = CustomEvent("next_mdp")
+run_sleep_time_event = CustomEvent(0)
 
 # creates target task and simplified version
 feature_vector = Features(GridSize(), Hole(exists = True))
@@ -44,11 +46,14 @@ use_pg = True
 class Tracker():
     
     
-    def __init__(self, mdp : MDP, stop_event, reset_event, go_to_optimal_event, q_agent : SarsaAgent, logger, load_q = False, learning_alg = "QLearning"):
+    def __init__(self, mdp : MDP, stop_event, reset_event, go_to_optimal_event, run_sleep_time_event, q_agent : SarsaAgent, logger, load_q = False, learning_alg = "QLearning"):
         # Assign parameters as attributes
         self.q_agent = q_agent;       self.logger = logger;           self.learning_alg = learning_alg
-        self.stop_event = stop_event; self.reset_event = reset_event; self.go_to_optimal_event = go_to_optimal_event
+        self.stop_event = stop_event; self.reset_event = reset_event; self.go_to_optimal_event = go_to_optimal_event; self.run_sleep_time_event = run_sleep_time_event
         self.q_agent_copy = self.q_agent.copy()
+        self.q_agent_target = self.q_agent.copy()
+        self.q_agent_target_copy = self.q_agent_target.copy()
+        self.x = None
         
         # Initialize attributes with default
         self.generation_manager = []; self.generation = 0; self.reward_logger = []
@@ -82,7 +87,13 @@ class Tracker():
         self.information_parser["q_agent"] = q_agent
     
     def create_source_task(self):
-        source_mdp = task_simplification(self.mdp)
+        source_task_generators = [task_simplification, option_sub_goals]
+        source_task_generators = [option_sub_goals]
+        generator_choice = random.choice(source_task_generators)
+        
+        # source_mdp = task_simplification(self.mdp)
+        threshold = 100
+        source_mdp = generator_choice(self.mdp, X = self.q_agent_target.x, V = self.q_agent_target.learned_values, threshold = threshold)
         return source_mdp
         
         pass
@@ -93,17 +104,21 @@ class Tracker():
         self.mdp = mdp
         self.mdp_copy = mdp.copy()
         self.pg.mdp = self.mdp
+        # time.sleep(2)
         
         
         while not self.stop_event.is_set():
         # while self.while_condition(q_agent):
             if self.go_to_optimal_event.value == "next":
                 self.go_to_optimal_event.clear()
+                self.reset_mdp(0)
                 break
             self.information_parser["q_agent"] = q_agent
             # time.sleep(.1)
-            if q_agent.use_optimal:
-                time.sleep(.5)
+            # if q_agent.use_optimal:
+            if self.run_sleep_time_event.value > 0:
+                time.sleep(self.run_sleep_time_event.value)
+
             # else: time.sleep (0.5)
             
             # Current state before moving
@@ -142,7 +157,7 @@ class Tracker():
             self.information_parser["q_values_grid"] = self.grid_matrix
             # self.information_parser["q_values_grid"] = q_agent.policy
             # print(self.information_parser["q_values_grid"])
-
+            q_agent.x.add_sample(current_sensors, action, new_sensors, reward)
             # If the MDP ended (aka agent reached terminal state)
             if self.mdp.mdp_ended == True:
                 self.reset_mdp(reward)
@@ -172,7 +187,7 @@ class Tracker():
     def run_mdp(self):
         """ Threading function -  runs learn"""
         # Run the learning agent
-        self.learn(self.q_agent, self.mdp_target.copy())
+        self.learn(self.q_agent_target, self.mdp_target.copy())
         
         # Save values
         self.q_values_log = self.q_agent.q_values
@@ -186,16 +201,21 @@ class Tracker():
             print(f'Grid size is: {source_mdp.grid.size}')
             self.learn(self.q_agent_copy.copy(), source_mdp)
         
+        
+        self.run_with_policy()
+
+    def run_with_policy(self):
         # Reading values
         self.optimal_policy = self.logger.load_q_values_optimal()
         
         # Create agent using best policy from before
-        self.optimized_agent = q_agent.copy() 
+        self.optimized_agent = self.q_agent_target.copy() 
         self.optimized_agent.use_optimal = True
         self.optimized_agent.set_q_values_from_policy(self.optimal_policy)
         
         # Run agent from policy
-        self.learn(self.optimized_agent, self.mdp)
+        self.learn(self.optimized_agent, self.mdp_target)
+        self.X = self.optimized_agent.policy
         
     def reset_mdp(self, reward):
          # u pdate reward logger and data to be able to plot it later
@@ -253,6 +273,18 @@ class Tracker():
             while_condition = not self.stop_event.is_set() and not self.go_to_optimal_event.value == "optimal"
         return while_condition
 
+    def change_timer(self):
+        timer = self.run_sleep_time_event.value
+        if timer == 1:
+            returner = 0.5
+        if timer == 2:
+            returner = 0.1
+        if timer == 3:
+            returner = 0.01
+        else: 
+            returner = 0
+        return returner
+
 # manager for saving/loading CSV files
 generation_csv = CsvManager("episode_data", ["Generation number", "Interaction steps", "Termination cause"])
 reward_csv = CsvManager("reward_data", ["Generation number","Reward", "Termination cause"])
@@ -270,10 +302,10 @@ get_q_values = False
 
 
 # Initialize the tracker
-tracker = Tracker(mdp, stop_event, reset_event, go_to_optimal_event, q_agent, logger, get_q_values, learning_alg)
+tracker = Tracker(mdp, stop_event, reset_event, go_to_optimal_event, run_sleep_time_event, q_agent, logger, get_q_values, learning_alg)
 
 # define threads
-pygame_thread = threading.Thread(target=tracker.pg.start_game_mdp, args=( stop_event, reset_event, go_to_optimal_event))
+pygame_thread = threading.Thread(target=tracker.pg.start_game_mdp, args=( stop_event, reset_event, go_to_optimal_event, run_sleep_time_event))
 mdp_thread = threading.Thread(target=tracker.run_mdp, args=())
 
 # Start both threads

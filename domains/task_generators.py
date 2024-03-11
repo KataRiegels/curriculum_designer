@@ -7,7 +7,7 @@ from samples import *
 from features import *
 import random as rand
 
-def task_simplification(mdp : MDP):
+def task_simplification(mdp : MDP, X = None, V = None, threshold = None):
     """Takes an MDP and returns a new MDP with a simplified feature"""
     # Copying parent MDP's features
     mdp_features = mdp.features.copy_features()
@@ -48,12 +48,14 @@ def find_high_value_states(mdp : MDP, X: X, V = None, threshold = None):
         old_state, action, new_state, reward = sample.get_attributes()
         # Get the Q value from V at state old_state
         value = V[old_state]
-        # value = mdp.value_function(old_state)
-
+        max_value = max(V.values())
+        print(f'max values {max_value}')
+        # # value = mdp.value_function(old_state)
+        # print(f'sample: {value}')
         if  value >= threshold:
             terminal_states.append(old_state)
             rewards[(old_state, action, new_state)] = value
-            
+            # print(f'terminal states included: {old_state}')
     return (terminal_states, rewards)
 
 
