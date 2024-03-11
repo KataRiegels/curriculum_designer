@@ -18,7 +18,7 @@ from logger import Plotter, Logger, CsvManager
 stop_event = threading.Event()
 # reset_event = threading.Event()
 reset_event = CustomEvent("learn")
-go_to_optimal_event = threading.Event()
+go_to_optimal_event = CustomEvent("next_mdp")
 
 # creates target task and simplified version
 feature_vector = Features(GridSize(), Hole(exists = True))
@@ -48,13 +48,16 @@ class Tracker():
         # Assign parameters as attributes
         self.q_agent = q_agent;       self.logger = logger;           self.learning_alg = learning_alg
         self.stop_event = stop_event; self.reset_event = reset_event; self.go_to_optimal_event = go_to_optimal_event
+        self.q_agent_copy = self.q_agent.copy()
         
         # Initialize attributes with default
         self.generation_manager = []; self.generation = 0; self.reward_logger = []
         self.information_parser = {}; self.q_values_log = []; self.samples = X()
         self.q_value_log_trigger = False
         
-        self.mdp = mdp; self.mdp_copy = self.mdp.copy()
+        self.mdp = mdp; self.mdp_copy = self.mdp.copy(); 
+        self.mdp_target = self.mdp.copy(); self.mdp_target.target = True
+        self.mdp_target_clean = self.mdp_target.copy()
         q_values_dummy = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
         self.grid_matrix = [[q_values_dummy for _ in range(self.mdp.grid.width)] for _ in range(self.mdp.grid.height)]
         
@@ -78,12 +81,25 @@ class Tracker():
         self.information_parser['q_values'] = [0,0,0,0]; self.information_parser["q_values_grid"] = self.grid_matrix
         self.information_parser["q_agent"] = q_agent
     
-    def learn(self, q_agent : SarsaAgent):
+    def create_source_task(self):
+        source_mdp = task_simplification(self.mdp)
+        return source_mdp
+        
+        pass
+    
+    def learn(self, q_agent : SarsaAgent, mdp = None):
         self.accu_reward = 0
-        self.mdp = self.mdp_copy.copy()
+        # self.mdp = self.mdp_copy.copy()
+        self.mdp = mdp
+        self.mdp_copy = mdp.copy()
         self.pg.mdp = self.mdp
+        
+        
         while not self.stop_event.is_set():
         # while self.while_condition(q_agent):
+            if self.go_to_optimal_event.value == "next":
+                self.go_to_optimal_event.clear()
+                break
             self.information_parser["q_agent"] = q_agent
             # time.sleep(.1)
             if q_agent.use_optimal:
@@ -156,7 +172,7 @@ class Tracker():
     def run_mdp(self):
         """ Threading function -  runs learn"""
         # Run the learning agent
-        self.learn(self.q_agent)
+        self.learn(self.q_agent, self.mdp_target.copy())
         
         # Save values
         self.q_values_log = self.q_agent.q_values
@@ -164,7 +180,11 @@ class Tracker():
         self.logger.save_q_values_log("q_values_log.npy", self.q_values_log)
         if self.q_value_log_trigger:
             self.logger.save_optimal_q_values("q_values_optimal.npy", self.optimal_policy)
-            
+        
+        while not self.stop_event.is_set():
+            source_mdp = self.create_source_task()
+            print(f'Grid size is: {source_mdp.grid.size}')
+            self.learn(self.q_agent_copy.copy(), source_mdp)
         
         # Reading values
         self.optimal_policy = self.logger.load_q_values_optimal()
@@ -175,7 +195,7 @@ class Tracker():
         self.optimized_agent.set_q_values_from_policy(self.optimal_policy)
         
         # Run agent from policy
-        self.learn(self.optimized_agent)
+        self.learn(self.optimized_agent, self.mdp)
         
     def reset_mdp(self, reward):
          # u pdate reward logger and data to be able to plot it later
@@ -229,7 +249,8 @@ class Tracker():
         if q_agent.use_optimal:
             while_condition = not self.stop_event.is_set()
         else:     
-            while_condition = not self.stop_event.is_set() and not self.go_to_optimal_event.is_set()
+            # while_condition = not self.stop_event.is_set() and not self.go_to_optimal_event.is_set()
+            while_condition = not self.stop_event.is_set() and not self.go_to_optimal_event.value == "optimal"
         return while_condition
 
 # manager for saving/loading CSV files

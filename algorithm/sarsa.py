@@ -36,7 +36,12 @@ class SarsaAgent:
         new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
         self.q_values[(state, action)] = new_q_value
 
-
+    def get_v_value(self, state):
+        """Calculates and returns the value of a state (V(s)) based on the maximum Q-value."""
+        q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
+        max_q_value = max(q_values)
+        return max_q_value
+    
     def choose_action(self, state):
         # Epsilon-greedy policy for action selection
         

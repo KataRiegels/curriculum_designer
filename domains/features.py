@@ -129,70 +129,6 @@ class Hole(Feature):
 
         """
     
-    # def run_dependencies(self, feature_dictionary : Features):
-    #     """ Runs through dependencies - position, width and existance all depend on grid size """
-    #     for feature in self.dependencies:
-    #         if type(feature) == GridSize:
-    #             grid_feature = feature_dictionary[GridSize().get_feature_name()]
-    #             # If grid width is less than 3, we can't fit a hole there
-    #             if grid_feature.width < 3: 
-    #                 print("Hole removed: Grid not wide enough")
-    #                 self.exists = False
-    #             # hole made smaller than initially given if it can't fit in the grid
-    #             elif self.width + 2 > grid_feature.width:
-    #                 self.width = grid_feature.width - 2
-    #             # set the position such that it is in the middle of the grid
-    #             self.set_hole_position(grid_feature.width, grid_feature.height)
-    
-    """
-    def set_hole_position(self, grid_width, grid_height):
-        if not self.exists: return
-        x = math.ceil(grid_width/2)
-        y = math.ceil(grid_height/2)
-        self.position = (x,y)
-        self.update_hole()
-        
-    def update_hole(self):
-        if not self.exists: return
-        
-        x = self.position[0]
-        y = self.position[1]
-        
-        
-        
-        
-        self.lower_bound_x = x - math.floor(self.width/2)
-        self.upper_bound_x = x + math.floor(self.width/2)
-        if self.width % 2 == 0: # even
-            self.upper_bound_x += 1
-            self.lower_bound_x -= 1
-        self.lower_bound_y = y - math.floor(self.height/2) - 1
-        self.upper_bound_y = y + math.floor(self.height/2)- 1
-        if self.height % 2 == 0: # even
-            self.lower_bound_y -= 1
-            self.upper_bound_y += 1
-            
-        x_values = range(self.lower_bound_x, self.upper_bound_x + 1)  # Adjust start_x and end_x accordingly
-        y_values = range(self.lower_bound_y, self.upper_bound_y + 1)  # Adjust start_y and end_y accordingly
-
-        hole_coordinates = []
-
-        for x in x_values:
-            for y in y_values:
-                hole_coordinates.append([x, y])
-        
-        
-        self.hole_coordinates = hole_coordinates
-        
-        beam_coordinates = [
-            [self.lower_bound_x - 1, self.lower_bound_y - 1],
-            [self.upper_bound_x + 1, self.lower_bound_y - 1],
-            [self.lower_bound_x - 1, self.upper_bound_y + 1],
-            [self.upper_bound_x + 1, self.upper_bound_y + 1]
-        ]   
-        
-        self.beam_coordinates = beam_coordinates
-    """
     # A magic methods to be able to make use of the concept of Rng(F_i)
     def __lt__(self, other : Hole):
         if other.exists and not self.exists: return True
@@ -223,6 +159,7 @@ class GridSize(Feature):
         while(new_width == self.width and new_height == self.height):
             new_width = rand.randrange(3,self.width + 1) 
             new_height = rand.randrange(3,self.height + 1)
+        print(f'Grid was simplified to size: {new_width}, {new_height}')
         return GridSize(width = new_width, height = new_height)
     
     def can_be_simplified(self):

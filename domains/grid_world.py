@@ -37,6 +37,7 @@ class PygameInstance():
         
         # sets everything to the initial values matching the mdp
         def reset():
+            print(f'reset with mdp size: {self.mdp.grid.size}')
             self.got_key = self.mdp.agent.state.key_found
             self.player_pos = self.mdp.agent.state.coordinate
             self.grid = self.mdp.grid
@@ -84,7 +85,14 @@ class PygameInstance():
                         pygame.quit()
                         sys.exit()
                     if event.key == pygame.K_w:
-                        go_to_optimal_event.set()
+                        # go_to_optimal_event.set()
+                        go_to_optimal_event.set_value("next")
+                        # reset_event.set()
+                        reset_event.set_value("policy")
+                        reset()  
+                    if event.key == pygame.K_e:
+                        # go_to_optimal_event.set()
+                        go_to_optimal_event.set_value("optimal")
                         # reset_event.set()
                         reset_event.set_value("policy")
                         reset()  
@@ -115,8 +123,10 @@ class PygameInstance():
 
             
             
-            for row in range(GRID_HEIGHT):
-                for col in range(GRID_WIDTH):
+            # for row in range(GRID_HEIGHT):
+            #     for col in range(GRID_WIDTH):
+            for row in range(self.mdp.grid.height):
+                for col in range(self.mdp.grid.width):
                     # pygame.draw.rect(screen, self.PLAYER_COLOR, (col * self.GRID_SIZE, row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE), 1)
                     cell_rect = pygame.Rect(col * self.GRID_SIZE, row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
                     # Draw the cell border

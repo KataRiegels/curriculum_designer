@@ -275,6 +275,9 @@ class MDP(list):
         #         self.terminations.append(t_cause)
         self.q_agent = None
         
+        self.specific_reward_values = None 
+        self.terminal_states = None
+        
         # Initialize the Grid
         self.grid = Grid()
         
@@ -370,6 +373,13 @@ class MDP(list):
             if term_cause:
                 self.end_mdp(cause=term_cause)
                 return       
+        if self.terminal_states:
+            for term_state in self.terminal_states:
+                if state == term_state:
+                    self.end_mdp(str(state))
+        
+        
+        
         # while (term == False):        
         # if term == ("lock"):
         # Agent fell into the pit or unlocked the lock
@@ -417,7 +427,7 @@ class MDP(list):
     # def termination_lock(self, state):
     #     pass    
     
-    def R(self, state : State, action : str) -> float:
+    def R(self, state : State, action : str, values = None) -> float:
         """ Reward function """
         sa        = SA(state, action)
         new_state = state.copy()
@@ -425,8 +435,11 @@ class MDP(list):
         new_state   = sa.move(self.grid)
         reward = 0
         
-        reward = self.value_function(new_state, self.grid)
-                
+        if self.specific_reward_values == None:
+            reward = self.value_function(new_state, self.grid)
+        else:
+            reward = self.specific_reward_values[state, action, new_state]
+                    
         return reward*(1)
 
     @staticmethod        
