@@ -114,6 +114,10 @@ class State():
     def coordinate(self):
         return (self.x,self.y)
     
+    @property
+    def position(self):
+        return self.coordinate
+    
     def copy(self):
         """Copying the State"""
         new_state = State(x=self.x, y=self.y, key_found=self.key_found)
@@ -377,7 +381,8 @@ class MDP(list):
                 # print(f'terminal state was:  {state.sensors} and {term_state}')
                 if state.sensors == term_state:
                     print(f'terminal state was:  \n  Key: {state.key_distance}\
-                        \nlock: {state.lock_distance}')
+                        \n lock: {state.lock_distance}\
+                            \n key found? {state.key_found}')
                     self.end_mdp(str(state))
         for func in self.terminations:
             term_cause = func(state)

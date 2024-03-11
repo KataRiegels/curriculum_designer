@@ -92,7 +92,7 @@ class Tracker():
         generator_choice = random.choice(source_task_generators)
         
         # source_mdp = task_simplification(self.mdp)
-        threshold = 100
+        threshold = 1
         source_mdp = generator_choice(self.mdp, X = self.q_agent_target.x, V = self.q_agent_target.learned_values, threshold = threshold)
         return source_mdp
         
@@ -132,7 +132,6 @@ class Tracker():
             new_sensors = new_state.sensors
             self.accu_reward += reward
             
-            
             # specify new state/sensors
             if not q_agent.use_optimal:
                 #For Q-learning - Implement if Q-learning is used
@@ -151,6 +150,9 @@ class Tracker():
 
             q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
+            if new_state.key_found :
+                print(f'found the key.\nq value:  {max(q_values)}\
+                        \nposition:  {current_state.position}')
 
             self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_state.sensors)
             # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_state.sensors)
@@ -273,17 +275,6 @@ class Tracker():
             while_condition = not self.stop_event.is_set() and not self.go_to_optimal_event.value == "optimal"
         return while_condition
 
-    def change_timer(self):
-        timer = self.run_sleep_time_event.value
-        if timer == 1:
-            returner = 0.5
-        if timer == 2:
-            returner = 0.1
-        if timer == 3:
-            returner = 0.01
-        else: 
-            returner = 0
-        return returner
 
 # manager for saving/loading CSV files
 generation_csv = CsvManager("episode_data", ["Generation number", "Interaction steps", "Termination cause"])
