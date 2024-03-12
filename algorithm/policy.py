@@ -3,16 +3,23 @@ import numpy as np
 import copy
 
 class Policy(dict):
-    def __init__(self, q_values):
+    def __init__(self, q_values = None):
         self.q_values = q_values
         self.policy = {}
         self.action_space_size = 4
-        self.set_optimal_policy(self.q_values)
+        if q_values:
+            self.set_optimal_policy(self.q_values)
 
     def get_q_value(self, state, action):
         # Retrieve Q-value from the Q-table
         key = (state, action)
         q_value = self.q_values.get(key, None)
+        return q_value if q_value is not None else 0.0
+    
+    def get_q_value_from_values(self, state, action, q_values):
+        # Retrieve Q-value from the Q-table
+        key = (state, action)
+        q_value = q_values.get(key, None)
         return q_value if q_value is not None else 0.0
     
     
@@ -30,6 +37,25 @@ class Policy(dict):
     def set_optimal_policy(self, q_values):
         self.policy = self.get_optimal_policy(q_values)
         pass
+
+    @staticmethod
+    def get_policy_from_q_values(self, q_values):
+        return_policy = Policy()
+
+        # Iterate over all unique states
+        for state in self.get_unique_states():
+            # Get Q-values for the current state
+            q_values_for_state = {action: self.get_q_value_from_values(state, action, q_values) for action in range(self.action_space_size)}
+            # q_values_for_state = self.get_q_values_for_state(state)
+            
+
+            # Determine the optimal action based on Q-values
+            optimal_action = max(q_values_for_state, key=q_values_for_state.get)
+
+            # Store the optimal action for the current state
+            return_policy[state] = optimal_action
+
+        return return_policy
 
     def get_optimal_policy(self, q_values):
         optimal_policy = {}

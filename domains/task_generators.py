@@ -11,7 +11,7 @@ def task_simplification(mdp : MDP, X = None, V = None, threshold = None):
     """Takes an MDP and returns a new MDP with a simplified feature"""
     # Copying parent MDP's features
     mdp_features = mdp.features.copy_features()
-    
+
     
     attempt = 0
     while attempt < 10:

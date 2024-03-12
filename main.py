@@ -16,12 +16,6 @@ import random
 import matplotlib.pyplot as plt
 from logger import Plotter, Logger, CsvManager
 
-# stop_event = threading.Event()
-# # events["reset"] = threading.Event()
-# events["reset"] = CustomEvent("learn")
-# go_to_optimal_event = CustomEvent("next_mdp")
-# run_sleep_time_event = CustomEvent(1)
-
 events = Events({"stop" : CustomEvent(),
                  "reset" : CustomEvent("learn"),
                  "next_mdp" : CustomEvent(),
@@ -54,7 +48,7 @@ use_pg = True
 class Tracker():
     
     
-    def __init__(self, mdp : MDP, events : Events, q_agent : SarsaAgent, logger, load_q = False, learning_alg = "QLearning"):
+    def __init__(self, mdp : MDP, events : Events, q_agent : QAgent, logger, load_q = False, learning_alg = "QLearning"):
         # Assign parameters as attributes
         self.events = events
         self.q_agent = q_agent;       self.logger = logger;           self.learning_alg = learning_alg
@@ -92,7 +86,141 @@ class Tracker():
         self.information_parser['q_values'] = [0,0,0,0]; self.information_parser["q_values_grid"] = self.grid_matrix
         self.information_parser["q_agent"] = q_agent
     
-    def create_source_task(self):
+    
+    def recurse_task_select(self, mdp, policy, beta, epsilon, curriculum):
+        # 1        
+        solved, x, new_policy = self.learn(self.q_agent, mdp, policy, beta)
+        # 2 - 5
+        if solved: 
+            self.enqueue(curriculum, mdp)
+            return (new_policy, curriculum)
+        # 6
+        source_tasks = self.create_source_tasks(mdp, x)
+        # 7 - 8
+        p = []
+        u = []
+        # 9 - 16
+        for Ms in source_tasks:
+            solved_Ms, X_Ms, policy_Ms = self.learn(self.q_agent, Ms, policy, beta)
+            if solved_Ms:
+                p.append((policy_Ms, Ms))
+            else:
+                u.append((Ms, X_Ms))
+        # 17 -23
+        if len(p) > 0:
+            (best_policy, best_mdp, score) = self.get_best_policy(p, policy, x)
+            if score > epsilon:
+                self.enqueue(curriculum, best_mdp)
+                return (best_policy, curriculum)
+        # 24
+        self.sort_by_sample_relevance(u, x, epsilon)
+        # 25 - 30
+        for (Ms, X_Ms) in u:
+            (new_policy, curriculum) = self.recurse_task_select(Ms, policy, beta, epsilon, curriculum)
+            if new_policy != None:
+                return  self.recurse_task_select(mdp, policy, beta, epsilon, curriculum)
+        # 31
+        return (None, curriculum)
+
+    def sort_by_sample_relevance(self, u : list[tuple[MDP, X]], x : X, epsilon : int):
+        
+        def compute_score(X_ms: X, x: X) -> float:
+            compared_count = X_ms.count_same_states(x)
+            return compared_count / len(x)
+        
+        # sorted_u = sorted(u, key=lambda pair: compute_score(pair[1], x))
+        u = sorted(u, key=lambda pair: compute_score(pair[1], x))
+        return u
+        """ 
+        overlap between samples from a source X_Ms
+            and the samples of the target X
+        
+        
+
+        for policy_task_pair in p:
+            policy_Ms, Ms = policy_task_pair
+            compared_count = 0
+            for sample in x:
+                state, action, new_state, reward = sample.get_attributes()
+                if policy[state] != policy_Ms[state]:
+                    compared_count += 1
+            score = compared_count / len(x)
+        """
+        for task_sample_pair in u:
+            Ms, X_ms = task_sample_pair
+            compared_count = X_ms.coumt_same_states(x)
+            """
+            compare = fraction of X[s] also present in X_Ms
+            The task-sample pairs in U are sorted by their relevance, dropping any that have relevance less than ,
+            """
+            
+            # for sample in x:
+            #     state, action, new_state, reward = sample.get_attributes()
+            #     if policy[state] != policy_Ms[state]:
+            #         compared_count += 1
+            # score = compared_count / len(x)
+        
+        pass
+
+        
+        
+    def get_best_policy(self, p : list[tuple[Policy, MDP]], policy : Policy, x : X) -> tuple[Policy, MDP, float]:
+        best_policy = None
+        best_mdp = None
+        best_score = None
+
+        for policy_task_pair in p:
+            policy_Ms, Ms = policy_task_pair
+            compared_count = 0
+            for sample in x:
+                state, action, new_state, reward = sample.get_attributes()
+                if policy[state] != policy_Ms[state]:
+                    compared_count += 1
+            score = compared_count / len(x)
+            
+            # Update best policy-task pair if the score is better
+            if score > best_score:
+                best_score = score
+                best_policy = policy_Ms
+                best_mdp = Ms
+
+        return best_policy, best_mdp, best_score
+        
+        for policy_task_pair in p:
+            policy_Ms = policy_task_pair[0]
+            Ms = policy_task_pair[1]
+            compared_count = 0
+            for sample in X:
+                state, action, new_state, reward = sample.get_attributes()
+                if policy[state] != policy_Ms[state]:
+                    compared_count += 1
+            score = compared_count/len(x)
+        """
+        for each state in X:
+            compare action from policy(s) from policy before learning Ms
+                    to policy_Ms(s) from policy after learning on Ms 
+        count = count number of states where action changed
+        score = normalize(count) by number of states in X
+            
+        
+        """
+        
+        return best_policy, best_mdp, score
+
+    def create_source_tasks(self, mdp : MDP, x) -> list[MDP]:
+        """Creates a set of source tasks"""
+        source_task_set = []
+        # How many source tasks to create?
+        for _ in range(3):
+            source_task_set.append(self.create_source_task(mdp, x))
+        return source_task_set
+
+    def enqueue(self, curriculum, mdp):
+        curriculum.append(mdp)
+        pass
+
+    
+    def create_source_task(self, mdp, x):
         source_task_generators = [task_simplification, option_sub_goals]
         source_task_generators = [task_simplification]
         # source_task_generators = [option_sub_goals]
@@ -100,22 +228,32 @@ class Tracker():
         
         # source_mdp = task_simplification(self.mdp)
         threshold = 1
-        source_mdp = generator_choice(self.mdp, X = self.q_agent_target.x, V = self.q_agent_target.learned_values, threshold = threshold)
+        source_mdp = generator_choice(mdp, X = x, V = self.q_agent_target.learned_values, threshold = threshold)
         return source_mdp
-        
-        pass
     
-    def learn(self, q_agent : QAgent, mdp = None):
-        self.accu_reward = 0
-        # self.mdp = self.mdp_copy.copy()
-        self.mdp = mdp
-        self.mdp_copy = mdp.copy()
-        self.pg.mdp = self.mdp
-        # time.sleep(2)
+    
+    
+    def run_mdp(self):
+        """ Threading function -  runs learn"""
+        # Run the learning agent
+        self.learn(self.q_agent_target, self.mdp_target.copy())
+        
+        # Save values
+        self.save_q_values()
+        
+        while not self.events["stop"].is_set():
+            if self.events["mdp_type"].value == "source":
+                source_mdp = self.create_source_task(self.mdp, self.q_agent_target.x)
+                print(f'Grid size is: {source_mdp.grid.size}')
+                self.learn(self.q_agent_copy.copy(), source_mdp)
+            elif self.events["mdp_type"].value == "optimal":
+                self.run_with_policy()
+    
+    def learn(self, q_agent : QAgent, mdp = None, policy = None, beta = None):
+        self.accu_reward = 0; self.mdp = mdp; self.mdp_copy = mdp.copy(); self.pg.mdp = self.mdp
         
         
         while not self.events["stop"].is_set():
-        # while self.while_condition(q_agent):
             # Checks whether we triggered termination of current MDP
             if self.events["next_mdp"].value == "next":
                 self.events["next_mdp"].clear()
@@ -150,6 +288,8 @@ class Tracker():
             # Add the trajectory examples
             q_agent.x.add_sample(current_sensors, action, new_sensors, reward)
 
+            x = q_agent.x
+            
             q_values = [q_agent.get_q_value(new_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
             # if new_state.key_found :
@@ -164,32 +304,18 @@ class Tracker():
 
             if done == True:
                 self.reset_mdp(reward)
-                
-
-    
-    def run_mdp(self):
-        """ Threading function -  runs learn"""
-        # Run the learning agent
-        self.learn(self.q_agent_target, self.mdp_target.copy())
         
-        # Save values
+        solved = False; 
+        policy = q_agent.policy
+        return (solved, x, policy )
+        
+                
+    def save_q_values(self):
         self.q_values_log = self.q_agent.q_values
         self.optimal_policy = self.q_agent.get_optimal_policy()
         self.logger.save_q_values_log("q_values_log.npy", self.q_values_log)
         if self.q_value_log_trigger:
             self.logger.save_optimal_q_values("q_values_optimal.npy", self.optimal_policy)
-        
-        while not self.events["stop"].is_set():
-            if self.events["mdp_type"].value == "source":
-                source_mdp = self.create_source_task()
-                print(f'Grid size is: {source_mdp.grid.size}')
-                self.learn(self.q_agent_copy.copy(), source_mdp)
-            elif self.events["mdp_type"].value == "optimal":
-                self.run_with_policy()
-            else:
-                print(f'nothing happened???')
-                
-        
 
     def run_with_policy(self):
         # Reading values
@@ -249,7 +375,6 @@ class Tracker():
             if fail_success > 0.7:
                 self.q_value_log_trigger
                 
-
                 
     def track_success(self):
         current_path = self.success_tracker.current_path

@@ -7,6 +7,9 @@ class X(list):
     def add_sample(self,old_state : State = None, action = None, new_state = None, reward = None ):
         self.append(Sample(old_state, action, new_state, reward))
     
+    def count_same_states(self, other: X) -> int:
+        common_states_count = sum(1 for sample in self if sample.old_state in other.get_states())
+        return common_states_count 
     # def add_sample(self, x : Sample):
     #     self.append(x)
     pass

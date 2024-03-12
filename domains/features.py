@@ -157,8 +157,8 @@ class GridSize(Feature):
         new_width = self.width
         new_height = self.height
         while(new_width == self.width and new_height == self.height):
-            new_width = rand.randrange(3,self.width + 1) 
-            new_height = rand.randrange(3,self.height + 1)
+            new_width = rand.randrange(max(3,self.width-2),self.width + 1) 
+            new_height = rand.randrange(max(3,self.width-2),self.height + 1)
         print(f'Grid was simplified to size: {new_width}, {new_height}')
         return GridSize(width = new_width, height = new_height)
     
