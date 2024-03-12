@@ -2,6 +2,7 @@ import random
 import numpy as np
 import copy
 from policy import Policy
+from samples import *
 
 class SarsaAgent:
     def __init__(self, max_training_episodes, max_steps, state_space_size, action_space_size, learning_rate,
@@ -19,6 +20,7 @@ class SarsaAgent:
         self.exploration_rate = exploration_rate
         self.use_optimal = False
         self.optimal_policy = {}
+        self.x = X()
         # self.policy = {}
 
 
@@ -36,7 +38,12 @@ class SarsaAgent:
         new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
         self.q_values[(state, action)] = new_q_value
 
-
+    def get_v_value(self, state):
+        """Calculates and returns the value of a state (V(s)) based on the maximum Q-value."""
+        q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
+        max_q_value = max(q_values)
+        return max_q_value
+    
     def choose_action(self, state):
         # Epsilon-greedy policy for action selection
         
@@ -101,6 +108,36 @@ class SarsaAgent:
 
         return chosen_action
     
+    @property
+    def learned_values(self):
+        return self.get_all_states_with_highest_q()
+    
+    def get_all_states_with_highest_q(self):
+        """
+        Get all states with their highest Q-values from the agent's Q-table.
+        
+        Returns:
+        - states_with_highest_q: A dictionary where keys are states and values are the highest Q-value for each state.
+        """
+
+        # Initialize a dictionary to store the highest Q-values for each state
+        states_with_highest_q = {}
+
+        # Get all unique states
+        states = self.get_unique_states()
+
+        # Iterate through each state
+        for state in states:
+            # Retrieve all Q-values for the current state
+            q_values_for_state = self.get_q_values_for_state(state)
+            
+            # Find the highest Q-value
+            max_q_value = max(q_values_for_state.values())
+
+            # Store the highest Q-value for the state
+            states_with_highest_q[state] = max_q_value
+
+        return states_with_highest_q
     
     def copy(self):
         return copy.deepcopy(self)

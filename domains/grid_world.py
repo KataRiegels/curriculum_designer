@@ -31,7 +31,7 @@ class PygameInstance():
     def reset_map(self):
         pass
 
-    def start_game_mdp(self, stop_event, reset_event, go_to_optimal_event):
+    def start_game_mdp(self, stop_event, reset_event, go_to_optimal_event, run_sleep_time_event):
         
         self.text_render_number = 0
         
@@ -84,10 +84,25 @@ class PygameInstance():
                         pygame.quit()
                         sys.exit()
                     if event.key == pygame.K_w:
-                        go_to_optimal_event.set()
+                        # go_to_optimal_event.set()
+                        go_to_optimal_event.set_value("next")
                         # reset_event.set()
                         reset_event.set_value("policy")
                         reset()  
+                    if event.key == pygame.K_e:
+                        # go_to_optimal_event.set()
+                        go_to_optimal_event.set_value("optimal")
+                        # reset_event.set()
+                        reset_event.set_value("policy")
+                        reset()  
+                    if event.key == pygame.K_1:
+                        run_sleep_time_event.set_value(0.5)
+                    if event.key == pygame.K_2:
+                        run_sleep_time_event.set_value(0.1)
+                    if event.key == pygame.K_3:
+                        run_sleep_time_event.set_value(0.01)
+                    if event.key == pygame.K_4:
+                        run_sleep_time_event.set_value(0)
                             
 
             # Happens when the run_mdp loop signals the mdp episode has ended
@@ -115,8 +130,10 @@ class PygameInstance():
 
             
             
-            for row in range(GRID_HEIGHT):
-                for col in range(GRID_WIDTH):
+            # for row in range(GRID_HEIGHT):
+            #     for col in range(GRID_WIDTH):
+            for row in range(self.mdp.grid.height):
+                for col in range(self.mdp.grid.width):
                     # pygame.draw.rect(screen, self.PLAYER_COLOR, (col * self.GRID_SIZE, row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE), 1)
                     cell_rect = pygame.Rect(col * self.GRID_SIZE, row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
                     # Draw the cell border
@@ -129,8 +146,6 @@ class PygameInstance():
                     cell_q_values = self.information_parser["q_values_grid"][col][row]
                     if not all(value == 0.0 for value in cell_q_values.values()):
                         # Handle the case where all values are 0.0 (no arrows needed)
-                    # Find the action with the highest Q-value
-                                # Find the action with the highest Q-value
                         max_value = max(cell_q_values.values())
                         max_actions = [action for action, value in cell_q_values.items() if value == max_value]
 

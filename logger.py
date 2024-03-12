@@ -32,14 +32,12 @@ class Logger():
         # Convert State objects to a hashable representation (e.g., tuple)
         self.q_values_optimal_path = q_values_path
         q_values_log_serializable = {state.to_np_save(): value for state, value in q_values_log.items()}
-        # print(f'q log: {q_values_log_serializable}')
         np.save(q_values_path, np.array(q_values_log_serializable))
 
     def load_q_values_optimal(self):
         loaded_data = np.load(self.q_values_optimal_path, allow_pickle=True).item()
         # q_values_log = {(State().convert_to_loadable(state), action): value for (state, action), value in loaded_data.items()}
         q_values_log = {Sensors.convert_to_loadable(state): value for state, value in loaded_data.items()}
-        # print(f'Loaded optimal q values: {q_values_log}')
         
         # q_values_log = State.from_np_load(loaded_data)
         return q_values_log
@@ -49,7 +47,6 @@ class Logger():
         self.q_values_log_path = q_values_path
         # Convert State objects to a hashable representation (e.g., tuple)
         q_values_log_serializable = {(state.to_np_save(), action): value for (state, action), value in q_values_log.items()}
-        # print(f'q log: {q_values_log_serializable}')
         np.save(q_values_path, np.array(q_values_log_serializable))
 
     def load_q_values_log(self):

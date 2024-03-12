@@ -10,9 +10,9 @@ class CustomEvent(threading.Event):
         self.value = value
         self.set()
 
-    def clear_value(self):
+    def clear(self):
         self.value = None
-        self.clear()
+        super().clear()
 
     def wait_for_value(self, timeout=None):
         self.wait(timeout)
