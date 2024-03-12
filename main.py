@@ -160,8 +160,9 @@ class Tracker():
             # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_state.sensors)
             self.information_parser["q_values_grid"] = self.grid_matrix
             
-            # if done == True:
-            if self.mdp.mdp_ended == True:
+            # if self.mdp.mdp_ended == True:
+
+            if done == True:
                 self.reset_mdp(reward)
                 
 
