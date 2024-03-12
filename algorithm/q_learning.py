@@ -1,3 +1,9 @@
+
+# DEPRICATED
+
+"""
+
+
 import random
 import numpy as np
 
@@ -38,13 +44,13 @@ class QLearningAgent:
     # def get_updated_q_value(self, state, reward, old_q_value, learning_rate, discount_factor, action_space_size):
     #     return old_q_value + learning_rate * (reward + discount_factor * max(self.get_q_value(tuple(state), a) for a in range(action_space_size)) - old_q_value)
 
-    def calculate_and_update_q_value(self, state, action, next_state, reward):
+    def calculate_and_update_q_value(self, state, action, next_state, next_action, reward):
         # Update Q-value in the Q-table
         old_q_value = self.get_q_value(state, action)
         target_q_value = reward + self.discount_factor * max(self.get_q_value(next_state, action) for a in range(self.action_space_size))
         new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
 
-        # self.q_values[(state, action)] = new_q_value
+        self.q_values[(state, action)] = new_q_value
 
     def choose_action(self, state):
         # Epsilon-greedy policy for action selection
@@ -68,3 +74,5 @@ class QLearningAgent:
 
             self.exploration_rate -= 0.0000001
             return chosen_action
+
+"""

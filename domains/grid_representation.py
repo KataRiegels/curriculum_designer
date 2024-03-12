@@ -184,37 +184,6 @@ class HoleObj():
         even = self.height % 2 == 0
         return even
 
-    """
-    def calculate_coordinates_2(self, grid : Grid = None):
-        # Finding the middle coordinate for the hole
-        x = math.ceil(grid.width/2)
-        y = math.ceil(grid.height/2)
-        self.mid = [x,y]
-        
-        # For lower coordinates from middle coordinate
-        self.start_x = x - math.floor(self.width/2)
-        self.start_y = y - math.floor(self.height/2)
-        
-        # for upper coordinates from middle coordinates
-        self.end_x = x + math.floor(self.width/2)
-        self.end_y = y + math.floor(self.height/2)
-        
-        # remove 1 coordinate step if the hole is even sized 
-        if self.is_width_even():  self.end_x -= 1
-        if self.is_height_even(): self.end_y -= 1
-        
-        # calculate all the coordinates
-        x_values = range(self.start_x, self.end_x + 1)  
-        y_values = range(self.start_y, self.end_y + 1)  
-        
-        for x in x_values:
-            for y in y_values:
-                self.coordinates.append([x, y])
-        
-        
-        pass
-    """
-
 
 class BeamsObj():
     """Class for representing pit beams on the Grid"""
