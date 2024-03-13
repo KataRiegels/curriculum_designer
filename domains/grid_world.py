@@ -31,7 +31,7 @@ class PygameInstance():
     def reset_map(self):
         pass
 
-    def start_game_mdp(self, stop_event, reset_event, go_to_optimal_event, run_sleep_time_event):
+    def start_game_mdp(self, events):
         
         self.text_render_number = 0
         
@@ -50,8 +50,8 @@ class PygameInstance():
         
         reset()
         
-        GRID_WIDTH = self.mdp.grid_size.width
-        GRID_HEIGHT = self.mdp.grid_size.height
+        GRID_WIDTH = self.mdp.grid.width
+        GRID_HEIGHT = self.mdp.grid.height
         
         
         SCREEN_WIDTH = GRID_WIDTH * self.GRID_SIZE + 200
@@ -62,7 +62,7 @@ class PygameInstance():
         screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Grid_world")
         
-        while not stop_event.is_set():
+        while not events["stop"].is_set():
             player_pos = self.player_pos
             grid = self.grid
             key_pos = self.key_pos
@@ -75,40 +75,42 @@ class PygameInstance():
             player_pos = self.mdp.agent.state.coordinate
             for event in pygame.event.get():
                 if event.type == pygame.QUIT  :
-                    stop_event.set()
+                    events["stop"].set()
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
-                        stop_event.set()
+                        events["stop"].set()
                         pygame.quit()
                         sys.exit()
                     if event.key == pygame.K_w:
-                        # go_to_optimal_event.set()
-                        go_to_optimal_event.set_value("next")
-                        # reset_event.set()
-                        reset_event.set_value("policy")
+                        # events["next_mdp"].set()
+                        events["next_mdp"].set_value("next")
+                        events["mdp_type"].set_value("source")
+                        # events["reset"].set()
+                        events["reset"].set_value("policy")
                         reset()  
                     if event.key == pygame.K_e:
-                        # go_to_optimal_event.set()
-                        go_to_optimal_event.set_value("optimal")
-                        # reset_event.set()
-                        reset_event.set_value("policy")
+                        # events["next_mdp"].set()
+                        events["next_mdp"].set_value("optimal")
+                        events["mdp_type"].set_value("optimal")
+                        # events["reset"].set()
+                        events["reset"].set_value("policy")
                         reset()  
                     if event.key == pygame.K_1:
-                        run_sleep_time_event.set_value(0.5)
+                        events["run_speed"].set_value(0.5)
                     if event.key == pygame.K_2:
-                        run_sleep_time_event.set_value(0.1)
+                        events["run_speed"].set_value(0.1)
                     if event.key == pygame.K_3:
-                        run_sleep_time_event.set_value(0.01)
+                        events["run_speed"].set_value(0.01)
                     if event.key == pygame.K_4:
-                        run_sleep_time_event.set_value(0)
+                        events["run_speed"].set_value(0)
                             
 
             # Happens when the run_mdp loop signals the mdp episode has ended
-            if reset_event.is_set():
+            if events["reset"].is_set():
                 reset()  
-                reset_event.clear()
+                events["reset"].clear()
                 
             # Draw the grid
             screen.fill(self.GROUND_COLOR)

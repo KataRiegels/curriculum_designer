@@ -1,33 +1,22 @@
-
-
-# DEPRICATED
-"""
-
 import random
 import numpy as np
 import copy
 from policy import Policy
 from samples import *
 
-
-class SarsaAgent:
+class QAgent:
     def __init__(self, max_training_episodes, max_steps, state_space_size, action_space_size, learning_rate,
                  discount_factor, exploration_rate, previous_q_values=None):
         if previous_q_values == None:
             self.q_values = {}
         else:
             self.q_values = previous_q_values
-        self.max_training_episodes = max_training_episodes
-        self.max_steps = max_steps
-        self.state_space_size = state_space_size
-        self.action_space_size = action_space_size
-        self.learning_rate = learning_rate
-        self.discount_factor = discount_factor
+        self.max_training_episodes = max_training_episodes; self.max_steps = max_steps; self.state_space_size = state_space_size
+        self.action_space_size = action_space_size; self.learning_rate = learning_rate; self.discount_factor = discount_factor
         self.exploration_rate = exploration_rate
         self.use_optimal = False
         self.optimal_policy = {}
         self.x = X()
-        # self.policy = {}
 
 
     def get_q_value(self, state, action):
@@ -38,12 +27,11 @@ class SarsaAgent:
 
 
     def calculate_and_update_q_value(self, state, action, next_state, next_action, reward):
-        old_q_value = self.get_q_value(state, action)
-        target_q_value = reward + self.discount_factor * (self.get_q_value(next_state, next_action))
-        new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
-        self.q_values[(state, action)] = new_q_value
+        """Calculates q_value based on SARSA rule, and updates q_value accordingly"""
+        pass
 
     def get_v_value(self, state):
+        """Calculates and returns the value of a state (V(s)) based on the maximum Q-value."""
         q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
         max_q_value = max(q_values)
         return max_q_value
@@ -117,12 +105,12 @@ class SarsaAgent:
         return self.get_all_states_with_highest_q()
     
     def get_all_states_with_highest_q(self):
-        # 
-        # Get all states with their highest Q-values from the agent's Q-table.
+        """
+        Get all states with their highest Q-values from the agent's Q-table.
         
-        # Returns:
-        # - states_with_highest_q: A dictionary where keys are states and values are the highest Q-value for each state.
-        # 
+        Returns:
+        - states_with_highest_q: A dictionary where keys are states and values are the highest Q-value for each state.
+        """
 
         # Initialize a dictionary to store the highest Q-values for each state
         states_with_highest_q = {}
@@ -146,4 +134,23 @@ class SarsaAgent:
     def copy(self):
         return copy.deepcopy(self)
 
-"""
+
+class SarsaAgent(QAgent):
+    
+    def calculate_and_update_q_value(self, state, action, next_state, next_action, reward):
+        """Calculates q_value based on SARSA rule, and updates q_value accordingly"""
+        old_q_value = self.get_q_value(state, action)
+        target_q_value = reward + self.discount_factor * (self.get_q_value(next_state, next_action))
+        new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
+        self.q_values[(state, action)] = new_q_value
+        
+class QLearningAgent(QAgent):
+    
+    
+    def calculate_and_update_q_value(self, state, action, next_state, next_action, reward):
+        # Update Q-value in the Q-table
+        old_q_value = self.get_q_value(state, action)
+        target_q_value = reward + self.discount_factor * max(self.get_q_value(next_state, action) for a in range(self.action_space_size))
+        new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
+
+        self.q_values[(state, action)] = new_q_value

@@ -6,7 +6,7 @@ import os
 path = os.path.abspath("domains"); sys.path.append(path)
 path = os.path.abspath("algorithm"); sys.path.append(path)
 import threading
-from algorithm import QLearningAgent, Policy, SarsaAgent, SuccessTracker
+from algorithm import QLearningAgent,QAgent,  Policy, SarsaAgent, SuccessTracker
 from domains import *
 from helpers import *
 import time
@@ -16,11 +16,19 @@ import random
 import matplotlib.pyplot as plt
 from logger import Plotter, Logger, CsvManager
 
-stop_event = threading.Event()
-# reset_event = threading.Event()
-reset_event = CustomEvent("learn")
-go_to_optimal_event = CustomEvent("next_mdp")
-run_sleep_time_event = CustomEvent(0)
+# stop_event = threading.Event()
+# # events["reset"] = threading.Event()
+# events["reset"] = CustomEvent("learn")
+# go_to_optimal_event = CustomEvent("next_mdp")
+# run_sleep_time_event = CustomEvent(1)
+
+events = Events({"stop" : CustomEvent(),
+                 "reset" : CustomEvent("learn"),
+                 "next_mdp" : CustomEvent(),
+                 "mdp_type" : CustomEvent(),
+                 "run_speed" : CustomEvent(1)
+                    })
+print(events)
 
 # creates target task and simplified version
 feature_vector = Features(GridSize(), Hole(exists = True))
@@ -30,7 +38,7 @@ mdp = old_mdp
 # mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
 
 learning_alg = "QLearning"
-learning_alg = "Sarsa"
+# learning_alg = "Sarsa"12q
 
 if learning_alg == "QLearning":
     q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
@@ -46,14 +54,12 @@ use_pg = True
 class Tracker():
     
     
-    def __init__(self, mdp : MDP, stop_event, reset_event, go_to_optimal_event, run_sleep_time_event, q_agent : SarsaAgent, logger, load_q = False, learning_alg = "QLearning"):
+    def __init__(self, mdp : MDP, events : Events, q_agent : SarsaAgent, logger, load_q = False, learning_alg = "QLearning"):
         # Assign parameters as attributes
+        self.events = events
         self.q_agent = q_agent;       self.logger = logger;           self.learning_alg = learning_alg
-        self.stop_event = stop_event; self.reset_event = reset_event; self.go_to_optimal_event = go_to_optimal_event; self.run_sleep_time_event = run_sleep_time_event
-        self.q_agent_copy = self.q_agent.copy()
-        self.q_agent_target = self.q_agent.copy()
-        self.q_agent_target_copy = self.q_agent_target.copy()
-        self.x = None
+        self.q_agent_copy  =  self.q_agent.copy()
+        self.q_agent_target = self.q_agent.copy(); self.q_agent_target_copy = self.q_agent_target.copy()
         
         # Initialize attributes with default
         self.generation_manager = []; self.generation = 0; self.reward_logger = []
@@ -88,7 +94,8 @@ class Tracker():
     
     def create_source_task(self):
         source_task_generators = [task_simplification, option_sub_goals]
-        source_task_generators = [option_sub_goals]
+        source_task_generators = [task_simplification]
+        # source_task_generators = [option_sub_goals]
         generator_choice = random.choice(source_task_generators)
         
         # source_mdp = task_simplification(self.mdp)
@@ -98,7 +105,7 @@ class Tracker():
         
         pass
     
-    def learn(self, q_agent : SarsaAgent, mdp = None):
+    def learn(self, q_agent : QAgent, mdp = None):
         self.accu_reward = 0
         # self.mdp = self.mdp_copy.copy()
         self.mdp = mdp
@@ -107,19 +114,19 @@ class Tracker():
         # time.sleep(2)
         
         
-        while not self.stop_event.is_set():
+        while not self.events["stop"].is_set():
         # while self.while_condition(q_agent):
-            if self.go_to_optimal_event.value == "next":
-                self.go_to_optimal_event.clear()
+            # Checks whether we triggered termination of current MDP
+            if self.events["next_mdp"].value == "next":
+                self.events["next_mdp"].clear()
                 self.reset_mdp(0)
                 break
+            
+            # sets the run speed based off keyboard input
+            if self.events["run_speed"].value > 0:
+                time.sleep(self.events["run_speed"].value)
             self.information_parser["q_agent"] = q_agent
-            # time.sleep(.1)
-            # if q_agent.use_optimal:
-            if self.run_sleep_time_event.value > 0:
-                time.sleep(self.run_sleep_time_event.value)
 
-            # else: time.sleep (0.5)
             
             # Current state before moving
             current_state = self.mdp.agent.state.copy()
@@ -134,58 +141,31 @@ class Tracker():
             
             # specify new state/sensors
             if not q_agent.use_optimal:
-                #For Q-learning - Implement if Q-learning is used
-                if learning_alg == "QLearning":
-                    q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, reward)
-                
-                #For SARSA - Implement if SARSA is used
-                if learning_alg == "Sarsa":
-                    next_action = self.q_agent.choose_action(new_sensors)
-                    q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
-                    # current_state = new_state
-                    # action = next_action
+                next_action = self.q_agent.choose_action(new_sensors)
+                q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
                     
             #This might need to be changed to "current_sensor" instead of "current_state"
             self.success_tracker.update_path(current_state)
+            
+            # Add the trajectory examples
+            q_agent.x.add_sample(current_sensors, action, new_sensors, reward)
 
-            q_values = [q_agent.get_q_value(current_sensors, a) for a in range(4)]
+            q_values = [q_agent.get_q_value(new_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
-            if new_state.key_found :
-                print(f'found the key.\nq value:  {max(q_values)}\
-                        \nposition:  {current_state.position}')
+            # if new_state.key_found :
+            #     print(f'found the key.\nq value:  {max(q_values)}\
+            #             \nposition:  {current_state.position}')
 
             self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_state.sensors)
             # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_state.sensors)
             self.information_parser["q_values_grid"] = self.grid_matrix
-            # self.information_parser["q_values_grid"] = q_agent.policy
-            # print(self.information_parser["q_values_grid"])
-            q_agent.x.add_sample(current_sensors, action, new_sensors, reward)
-            # If the MDP ended (aka agent reached terminal state)
-            if self.mdp.mdp_ended == True:
+            
+            # if self.mdp.mdp_ended == True:
+
+            if done == True:
                 self.reset_mdp(reward)
                 
-                
-    def track_success(self):
-        current_path = self.success_tracker.current_path
-        #if self.success_tracker.track_success(current_path):
-        if self.success_tracker.previous_path == current_path:
-            self.success_tracker.path_count += 1
-            optimal_policy = self.q_agent.get_optimal_policy()
-            if self.success_tracker.path_count < self.success_tracker.success_threshhold:
-                print(self.success_tracker.path_count)
-                print(f'Same path taken {self.success_tracker.path_count} amount of times!')
-                self.success_tracker.start_new_path()
-            else:
-                print(f'Same route taken {self.success_tracker.success_threshhold} amount of times! optimal policy found')
-                #break
-        else:
-            self.success_tracker.path_count = 0
-            self.success_tracker.start_new_path()
-            #print("New route taken! Success criteria reset")
 
-        self.success_tracker.save_path(current_path)
-
-    
     
     def run_mdp(self):
         """ Threading function -  runs learn"""
@@ -199,13 +179,17 @@ class Tracker():
         if self.q_value_log_trigger:
             self.logger.save_optimal_q_values("q_values_optimal.npy", self.optimal_policy)
         
-        while not self.stop_event.is_set():
-            source_mdp = self.create_source_task()
-            print(f'Grid size is: {source_mdp.grid.size}')
-            self.learn(self.q_agent_copy.copy(), source_mdp)
+        while not self.events["stop"].is_set():
+            if self.events["mdp_type"].value == "source":
+                source_mdp = self.create_source_task()
+                print(f'Grid size is: {source_mdp.grid.size}')
+                self.learn(self.q_agent_copy.copy(), source_mdp)
+            elif self.events["mdp_type"].value == "optimal":
+                self.run_with_policy()
+            else:
+                print(f'nothing happened???')
+                
         
-        
-        self.run_with_policy()
 
     def run_with_policy(self):
         # Reading values
@@ -240,11 +224,8 @@ class Tracker():
         self.mdp = self.mdp_copy.copy()
         self.pg.mdp = self.mdp
             
-        self.reset_event.set()
+        self.events["reset"].set()
         
-
-        
-
     def update_information_parser(self):
         # update data iteration to be able to plot it later
         
@@ -268,14 +249,28 @@ class Tracker():
             if fail_success > 0.7:
                 self.q_value_log_trigger
                 
-    def while_condition(self, q_agent):
-        if q_agent.use_optimal:
-            while_condition = not self.stop_event.is_set()
-        else:     
-            # while_condition = not self.stop_event.is_set() and not self.go_to_optimal_event.is_set()
-            while_condition = not self.stop_event.is_set() and not self.go_to_optimal_event.value == "optimal"
-        return while_condition
 
+                
+    def track_success(self):
+        current_path = self.success_tracker.current_path
+        #if self.success_tracker.track_success(current_path):
+        if self.success_tracker.previous_path.copy() == current_path:
+            self.success_tracker.path_count += 1
+            if self.success_tracker.path_count < self.success_tracker.success_threshhold:
+                print(self.success_tracker.path_count)
+                print(f'Same path taken {self.success_tracker.path_count} amount of times!')
+                self.success_tracker.start_new_path()
+            else:
+                print(f'Same route taken {self.success_tracker.success_threshhold} amount of times! optimal policy found')
+                # break
+        else:
+            self.success_tracker.path_count = 0
+            self.success_tracker.start_new_path()
+            #print("New route taken! Success criteria reset")
+
+        self.success_tracker.save_path(current_path)
+
+    
 
 # manager for saving/loading CSV files
 generation_csv = CsvManager("episode_data", ["Generation number", "Interaction steps", "Termination cause"])
@@ -294,10 +289,10 @@ get_q_values = False
 
 
 # Initialize the tracker
-tracker = Tracker(mdp, stop_event, reset_event, go_to_optimal_event, run_sleep_time_event, q_agent, logger, get_q_values, learning_alg)
+tracker = Tracker(mdp, events, q_agent, logger, get_q_values, learning_alg)
 
 # define threads
-pygame_thread = threading.Thread(target=tracker.pg.start_game_mdp, args=( stop_event, reset_event, go_to_optimal_event, run_sleep_time_event))
+pygame_thread = threading.Thread(target=tracker.pg.start_game_mdp, args=( (events),))
 mdp_thread = threading.Thread(target=tracker.run_mdp, args=())
 
 # Start both threads

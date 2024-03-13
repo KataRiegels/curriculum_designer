@@ -17,3 +17,14 @@ class CustomEvent(threading.Event):
     def wait_for_value(self, timeout=None):
         self.wait(timeout)
         return self.value
+    
+    
+class Events(dict):
+    
+    def __init__(self, events):
+        for name, event in events.items():
+            self[name] = event
+        
+        pass
+    
+    pass

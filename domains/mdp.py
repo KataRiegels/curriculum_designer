@@ -248,40 +248,26 @@ def termination_lock(state : State):
  
 class MDP(list):
     """ Class that represents an episodic Markov Decision Process, aka "task" """
-    S = []          # set of states
-    A = []          # set of actions
-    P = None        # transition function that gives the probability of moving to a new state
-    R = None        # a reward function that gives the immediate reward for taking an action in a state.
-    S_0 = []        #  distribution over starting states
-    S_f = []        # set of terminal states
-    agent = Agent()
-    
-    # F..
-    grid_size = GridSize()
     
     def copy(self):
         return copy.deepcopy(self)
     
-    # def copy(self):
-    #     return MDP(init_state = self.init_state, features = self.features, run_with_print = self.run_with_print)
-    
     def __init__(self, init_state = None, features : Features = None, run_with_print = False, terminations = []):
         
         # set the initial state
-        if init_state == None:
-            self.init_state = State()
-        else:
-            self.init_state = init_state
+        if    init_state == None: self.init_state = State()
+        else:                     self.init_state = init_state
+        self.agent = Agent(self.init_state)
         
+        self.mdp_ended = False; self.term_cause = "nothing"; self.interaction_number = 0
+
+
+        # MDP termination things
         self.terminations = terminations
         if len(terminations) == 0:
             self.terminations.append(termination_pit)
         if len(terminations) == 1:
             self.terminations.append(termination_lock)
-        # else: 
-        #     for t_cause in terminations:
-        #         self.terminations.append(t_cause)
-        self.q_agent = None
         
         self.specific_reward_values = {} 
         self.terminal_states = None
@@ -290,15 +276,10 @@ class MDP(list):
         self.grid = Grid()
         
         # initialize mdp agent
-        self.agent = Agent(self.init_state)
         
-        # Keep track of whether the MDP episode should terminate.
-        self.mdp_ended = False
+        
         
         self.run_with_print = run_with_print    
-        
-        # Initializing the term_cause which is nothing to begin with
-        self.term_cause = "nothing"
         
         # features
         if features == None:
@@ -310,7 +291,7 @@ class MDP(list):
                 self.features.run_with_print = True
         self.attach_features()
         
-        self.interaction_number = 0
+        
         
         self.random_mdp_num = rand.randint(0, 100)
     
@@ -334,7 +315,6 @@ class MDP(list):
         new_state = state.copy()
         new_state   = sa.move(self.grid)
         
-        
         # Handles removal of key when picked up
         cell_type = self.grid.check_coordinate((new_state.coordinate))
         if cell_type == "key" and not self.agent.state.key_found:
@@ -343,8 +323,7 @@ class MDP(list):
             self.grid.assign_cell(new_state.coordinate, None)        
         
         # check for terminal states
-        self.check_termination_2(new_state)
-        # self.check_termination(new_state)
+        self.check_termination(new_state)
 
         
         # currently always sure?
@@ -354,28 +333,27 @@ class MDP(list):
         return [(new_state, p)]
 
     def take_action(self, action):
-        reward = self.R(self.agent.state, action)
+        """Handles all the things related to taking an action for an MDP"""
+        reward     = self.R(self.agent.state, action)
         next_state = self.P(self.agent.state, action)[0][0]
-        done = self.mdp_ended
+        done       = self.mdp_ended
 
         self.agent.state = next_state
         self.update_state()
         
         
-        
         return next_state, reward, done
-        pass
 
-    def transition(self, state : State, action : str):
-        return self.P(state, action)
 
     def end_mdp(self, cause = None):
         """ Call to end current mdp due to termination """
         self.mdp_ended = True
         self.term_cause = cause
         return True
-    def check_termination_2(self, state : State):
-        current_cell_type = self.grid.check_coordinate(state.coordinate)
+    
+    def check_termination(self, state : State):
+        """Checks whether the given state should cause MDP termination"""
+        # When specific terminal states are given
         if self.terminal_states:
             for term_state in self.terminal_states:
                 # print(f'terminal state was:  {state.sensors} and {term_state}')
@@ -384,60 +362,33 @@ class MDP(list):
                         \n lock: {state.lock_distance}\
                             \n key found? {state.key_found}')
                     self.end_mdp(str(state))
+                    
+        # Runs the general termination states
         for func in self.terminations:
             term_cause = func(state)
             if term_cause:
                 self.end_mdp(cause=term_cause)
-                return       
         
         
-        
-        # while (term == False):        
-        # if term == ("lock"):
-        # Agent fell into the pit or unlocked the lock
-        # if (current_cell_type == "hole" and state.key_found):
-        #     self.end_mdp(cause = "holekey")            
-            
-        # elif (current_cell_type == "hole"):
-        #     self.end_mdp(cause = current_cell_type)
-              
-        # elif (current_cell_type == "lock" and state.key_found):
-        #     self.end_mdp(cause = current_cell_type)
 
 
 
 
                         
-    def check_termination(self, state):
-        """ checks and handles when a state leads to termination """
-        current_cell_type = self.grid.check_coordinate((state.coordinate))
+    # def check_termination(self, state):
+    #     """ checks and handles when a state leads to termination """
+    #     current_cell_type = self.grid.check_coordinate((state.coordinate))
         
-        # Agent fell into the pit or unlocked the lock
-        if (current_cell_type == "hole" and state.key_found):
-            print(f'term1')
-            self.end_mdp(cause = "holekey")            
+    #     # Agent fell into the pit or unlocked the lock
+    #     if (current_cell_type == "hole" and state.key_found):
+    #         print(f'term1')
+    #         self.end_mdp(cause = "holekey")            
             
-        elif (current_cell_type == "hole" \
-                or current_cell_type == "lock" and state.key_found):
-            print(f'term1')
-            self.end_mdp(cause = current_cell_type)            
-    
-    # def termination_lock(self, state):
-    #     current_cell_type = self.grid.check_coordinate((state.coordinate))
-    #     if (current_cell_type == "lock" and state.key_found):
+    #     elif (current_cell_type == "hole" \
+    #             or current_cell_type == "lock" and state.key_found):
+    #         print(f'term1')
     #         self.end_mdp(cause = current_cell_type)            
-        
     
-    # def termination_pit(self, state):
-    #     current_cell_type = self.grid.check_coordinate((state.coordinate))
-    #     if (current_cell_type == "hole"):
-    #         if state.key_found:
-    #             self.end_mdp(cause = "holekey")
-    #         else: 
-    #             self.end_mdp(cause = current_cell_type)            
-    
-    # def termination_lock(self, state):
-    #     pass    
     
     def R(self, state : State, action : str, values = None) -> float:
         """ Reward function """
@@ -447,21 +398,18 @@ class MDP(list):
         new_state   = sa.move(self.grid)
         reward = 0
         
-        # if self.specific_reward_values == None:
-        #     reward = self.value_function(new_state, self.grid)
-        # else:
-        #     pass
+        # Checks for possible given terminal states outside the basic pit and lock
         key = (state.sensors, action, new_state.sensors)
         if key in self.specific_reward_values:        
             reward = self.specific_reward_values[(state.sensors, action, new_state.sensors)]
         else:
-            reward = self.value_function(new_state, self.grid)
+            reward = self.immediate_reward(new_state, self.grid)
                     
         return reward*(1)
 
     @staticmethod        
-    def value_function(state, grid):
-        # Reward based off the cell type
+    def immediate_reward(state, grid):
+        """ Reward based off the cell type """ 
         reward = 0
         cell_type = grid.check_coordinate((state.coordinate))
         if cell_type == "key":
