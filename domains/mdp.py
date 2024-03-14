@@ -64,7 +64,8 @@ class Sensors():
         
         
         return (f"beams: {beams},key: {key}, lock: {lock}, pit: {pit}, {self.key_found} ---- ")
-
+    def __repr__(self):
+        return self.__str__()
     # def __str__(self):
         
         
@@ -159,7 +160,8 @@ class State():
 
     def __str__(self):
         return (f"Position: {self.x},{self.y} ---- ")
-
+    def __repr__(self):
+        return self.__str__()
     def convert_to_loadable(self, data):
         """ Returning structure for saving in .npy"""
         returner = State(data[0], data[1], data[2], data[3], data[4], data[5], data[6])
@@ -228,7 +230,6 @@ def termination_key(state : State):
         return False    
     
 def termination_pit(state : State):
-    # print(f'pit termination??')
     if (state.hole_distance == 0.0):
         if state.key_found:
             return "holekey"
@@ -356,38 +357,20 @@ class MDP(list):
         # When specific terminal states are given
         if self.terminal_states:
             for term_state in self.terminal_states:
-                # print(f'terminal state was:  {state.sensors} and {term_state}')
                 if state.sensors == term_state:
-                    print(f'terminal state was:  \n  Key: {state.key_distance}\
-                        \n lock: {state.lock_distance}\
-                            \n key found? {state.key_found}')
                     self.end_mdp(str(state))
                     
         # Runs the general termination states
         for func in self.terminations:
             term_cause = func(state)
             if term_cause:
+                # print(f'def term: {term_cause}')
                 self.end_mdp(cause=term_cause)
         
         
 
 
 
-
-                        
-    # def check_termination(self, state):
-    #     """ checks and handles when a state leads to termination """
-    #     current_cell_type = self.grid.check_coordinate((state.coordinate))
-        
-    #     # Agent fell into the pit or unlocked the lock
-    #     if (current_cell_type == "hole" and state.key_found):
-    #         print(f'term1')
-    #         self.end_mdp(cause = "holekey")            
-            
-    #     elif (current_cell_type == "hole" \
-    #             or current_cell_type == "lock" and state.key_found):
-    #         print(f'term1')
-    #         self.end_mdp(cause = current_cell_type)            
     
     
     def R(self, state : State, action : str, values = None) -> float:
@@ -424,10 +407,11 @@ class MDP(list):
         
     def __str__(self):
         """How the class is represented when e.g. printed"""
-        string = "MDP with: \n MDP number {0} \n  Grid size: {1}".format(self.random_mdp_num, self.grid_size)
+        string = f"MDP with:MDP number {self.random_mdp_num}  Grid size: {self.grid.size}"
         return string
 
-
+    def __repr__(self):
+        return self.__str__()
 class SA():
     """Not to be confused with the assault. stands for state-action"""
     def __init__(self, state : State, action):

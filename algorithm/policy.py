@@ -8,8 +8,19 @@ class Policy(dict):
         self.policy = {}
         self.action_space_size = 4
         if q_values:
-            self.set_optimal_policy(self.q_values)
+            self.set_optimal_policy(q_values)
+        # else:
+        #     # Generate random Q-values and set random policy
+        #     self.q_values = self.generate_random_q_values()
+        #     self.set_random_policy()
+    def generate_random_q_values(self):
+        q_values = {}
+        for state in self.get_unique_states():
+            q_values[state] = [random.random() for _ in range(self.action_space_size)]
+        return q_values
 
+    def set_random_policy(self):
+        self.policy = self.get_policy_from_q_values(self.q_values)
     def get_q_value(self, state, action):
         # Retrieve Q-value from the Q-table
         key = (state, action)

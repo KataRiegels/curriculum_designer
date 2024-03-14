@@ -24,7 +24,6 @@ class QLearningAgent:
 
     # def get_q_value(self, state, action):
     #     # Retrieve Q-value from the Q-table
-    #     #print(self.q_values)
     #     return self.q_values.get((state, action), 0.0)
 
     def get_q_value(self, state, action):
@@ -34,9 +33,7 @@ class QLearningAgent:
         
         # if q_value is None:
         #     pass
-        #     print(f"Q-value not found for key: {key}. Using default value: 0.0")
         # else: 
-        #     print(f"Q-value found for key: {key} with value {q_value}")
 
 
         return q_value if q_value is not None else 0.0
@@ -65,9 +62,6 @@ class QLearningAgent:
             max_q_value = max(q_values)
             max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
             if q_values != [0.0,0.0,0.0,0.0]:
-                print(f'Q values: {q_values}')
-                print(f'max Q values: {max_q_value}')
-                print(f'max Q action: {max_q_indices}')
 
             # Randomly choose one of the actions with the maximum Q-value
             chosen_action = random.choice(max_q_indices)

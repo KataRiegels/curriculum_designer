@@ -50,11 +50,9 @@ def find_high_value_states(mdp : MDP, X: X, V = None, threshold = None):
         value = V[old_state]
         max_value = max(V.values())
         # # value = mdp.value_function(old_state)
-        # print(f'sample: {value}')
         if  value >= threshold:
             terminal_states.append(old_state)
             rewards[(old_state, action, new_state)] = value
-            print(f'terminal states included: {old_state}')
     return (terminal_states, rewards)
 
 

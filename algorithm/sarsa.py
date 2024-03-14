@@ -68,7 +68,6 @@ class SarsaAgent:
 
             self.exploration_rate -= 0.0000001
             return chosen_action
-        # print(self.exploration_rate)
     def get_unique_states(self):
         unique_states = set()
 

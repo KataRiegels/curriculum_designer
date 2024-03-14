@@ -20,9 +20,8 @@ events = Events({"stop" : CustomEvent(),
                  "reset" : CustomEvent("learn"),
                  "next_mdp" : CustomEvent(),
                  "mdp_type" : CustomEvent(),
-                 "run_speed" : CustomEvent(1)
+                 "run_speed" : CustomEvent(0)
                     })
-print(events)
 
 # creates target task and simplified version
 feature_vector = Features(GridSize(), Hole(exists = True))
@@ -32,7 +31,7 @@ mdp = old_mdp
 # mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
 
 learning_alg = "QLearning"
-# learning_alg = "Sarsa"12q
+learning_alg = "Sarsa"
 
 if learning_alg == "QLearning":
     q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
@@ -87,20 +86,50 @@ class Tracker():
         self.information_parser["q_agent"] = q_agent
     
     
+    def generate_curriculum(self, target_mdp, policy, beta, delta, epsilon):
+        curriculum : list[MDP]= []
+        while not self.events["stop"].is_set(): 
+            size = len(curriculum)
+            (new_policy, curriculum) = self.recurse_task_select(target_mdp, policy, beta, epsilon, curriculum)
+            if new_policy == None:
+                beta *= 1.2 # fix
+                print(f'line 96')
+                del curriculum[-size:]
+                continue
+            policy = new_policy
+            if self.evaluate(target_mdp, policy) > delta:
+                print(f'line 99')
+                break
+        return (policy, curriculum)
+
+        
+    def evaluate(self, target_mdp : MDP, policy : Policy) -> float:
+        accu_reward = self.simulate_episode(target_mdp, policy)
+        return accu_reward
+        pass
+    
     def recurse_task_select(self, mdp, policy, beta, epsilon, curriculum):
+        print(f'curriculum pre: {curriculum}')
+        if self.events["stop"].is_set(): 
+            print(f'stopped?')
+            return (None, curriculum)
         # 1        
         solved, x, new_policy = self.learn(self.q_agent, mdp, policy, beta)
         # 2 - 5
         if solved: 
+            print(f'solved?')
             self.enqueue(curriculum, mdp)
             return (new_policy, curriculum)
         # 6
         source_tasks = self.create_source_tasks(mdp, x)
         # 7 - 8
-        p = []
-        u = []
+        p = []; u = []
         # 9 - 16
         for Ms in source_tasks:
+            print(f'1')
+            if Ms == None:
+                print(f'No more source tasks to me generated???')
+                return (None, curriculum)
             solved_Ms, X_Ms, policy_Ms = self.learn(self.q_agent, Ms, policy, beta)
             if solved_Ms:
                 p.append((policy_Ms, Ms))
@@ -108,59 +137,44 @@ class Tracker():
                 u.append((Ms, X_Ms))
         # 17 -23
         if len(p) > 0:
+            print(f'2')
             (best_policy, best_mdp, score) = self.get_best_policy(p, policy, x)
             if score > epsilon:
                 self.enqueue(curriculum, best_mdp)
                 return (best_policy, curriculum)
         # 24
+        print(f'gonna sort now')
         self.sort_by_sample_relevance(u, x, epsilon)
         # 25 - 30
         for (Ms, X_Ms) in u:
+            print(f'3')
             (new_policy, curriculum) = self.recurse_task_select(Ms, policy, beta, epsilon, curriculum)
             if new_policy != None:
                 return  self.recurse_task_select(mdp, policy, beta, epsilon, curriculum)
         # 31
+        print(f'curriculum: {curriculum}')
         return (None, curriculum)
 
     def sort_by_sample_relevance(self, u : list[tuple[MDP, X]], x : X, epsilon : int):
         
         def compute_score(X_ms: X, x: X) -> float:
-            compared_count = X_ms.count_same_states(x)
-            return compared_count / len(x)
-        
+            print(f'about to compare')
+            try:
+                compared_count = X_ms.count_same_states(x)
+            except:
+                print("exception???")
+            print(f'compared {compared_count}')
+            if len(x)>0:
+                returner = compared_count / len(x) 
+                print(f'returner was {returner}')
+                return returner
+            else:
+                print(f'returning 0')
+                return 0
+            
         # sorted_u = sorted(u, key=lambda pair: compute_score(pair[1], x))
         u = sorted(u, key=lambda pair: compute_score(pair[1], x))
         return u
-        """ 
-        overlap between samples from a source X_Ms
-            and the samples of the target X
-        
-        
-
-        for policy_task_pair in p:
-            policy_Ms, Ms = policy_task_pair
-            compared_count = 0
-            for sample in x:
-                state, action, new_state, reward = sample.get_attributes()
-                if policy[state] != policy_Ms[state]:
-                    compared_count += 1
-            score = compared_count / len(x)
-        """
-        for task_sample_pair in u:
-            Ms, X_ms = task_sample_pair
-            compared_count = X_ms.coumt_same_states(x)
-            """
-            compare = fraction of X[s] also present in X_Ms
-            The task-sample pairs in U are sorted by their relevance, dropping any that have relevance less than ,
-            """
-            
-            # for sample in x:
-            #     state, action, new_state, reward = sample.get_attributes()
-            #     if policy[state] != policy_Ms[state]:
-            #         compared_count += 1
-            # score = compared_count / len(x)
-        
-        pass
 
         
         
@@ -212,7 +226,12 @@ class Tracker():
         source_task_set = []
         # How many source tasks to create?
         for _ in range(3):
-            source_task_set.append(self.create_source_task(mdp, x))
+            source_task = self.create_source_task(mdp, x)
+            source_task_set.append(source_task)
+        # for mdp in source_task_set:
+        #     print("printing those mDPS")
+        #     print(mdp)
+        print(f'source MDPs: {source_task_set}')
         return source_task_set
 
     def enqueue(self, curriculum, mdp):
@@ -236,6 +255,9 @@ class Tracker():
     def run_mdp(self):
         """ Threading function -  runs learn"""
         # Run the learning agent
+        
+        # self.generate_curriculum(self.mdp_target, Policy(), 50000, 1100, 5)
+        
         self.learn(self.q_agent_target, self.mdp_target.copy())
         
         # Save values
@@ -244,16 +266,19 @@ class Tracker():
         while not self.events["stop"].is_set():
             if self.events["mdp_type"].value == "source":
                 source_mdp = self.create_source_task(self.mdp, self.q_agent_target.x)
-                print(f'Grid size is: {source_mdp.grid.size}')
+                print(f'Next MDP? Grid size is: {source_mdp.grid.size}')
                 self.learn(self.q_agent_copy.copy(), source_mdp)
             elif self.events["mdp_type"].value == "optimal":
                 self.run_with_policy()
     
-    def learn(self, q_agent : QAgent, mdp = None, policy = None, beta = None):
+    def learn(self, q_agent : QAgent, mdp = None, policy = None, beta = 500000000):
         self.accu_reward = 0; self.mdp = mdp; self.mdp_copy = mdp.copy(); self.pg.mdp = self.mdp
-        
-        
-        while not self.events["stop"].is_set():
+        time_steps = 0
+        if policy != None:
+            q_agent.q_values_from_policy(policy)
+        solved = False
+        x = X()
+        while not self.events["stop"].is_set() and beta > time_steps:
             # Checks whether we triggered termination of current MDP
             if self.events["next_mdp"].value == "next":
                 self.events["next_mdp"].clear()
@@ -283,7 +308,64 @@ class Tracker():
                 q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
                     
             #This might need to be changed to "current_sensor" instead of "current_state"
-            self.success_tracker.update_path(current_state)
+            solved = self.success_tracker.update_path(current_state)
+            
+            # Add the trajectory examples
+            q_agent.x.add_sample(current_sensors, action, new_sensors, reward)
+
+            x = q_agent.x
+            
+            q_values = [q_agent.get_q_value(new_sensors, a) for a in range(4)]
+            self.information_parser['q_values'] = q_values
+            # if new_state.key_found :
+            #     print(f'found the key.\nq value:  {max(q_values)}\
+            #             \nposition:  {current_state.position}')
+
+            self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_state.sensors)
+            # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_state.sensors)
+            self.information_parser["q_values_grid"] = self.grid_matrix
+            
+            # if self.mdp.mdp_ended == True:
+            time_steps += 1
+            if done == True:
+                self.reset_mdp(reward)
+        print(f'Finisned a learn()')
+        if not beta > time_steps:
+            print(f'Beta exceeded')
+        policy = q_agent.policy
+        return (solved, x, policy )
+        
+    def simulate_episode(self, mdp = None, policy = None, beta = None):
+        self.accu_reward = 0; self.mdp = mdp; self.mdp_copy = mdp.copy(); self.pg.mdp = self.mdp
+        q_agent = self.q_agent_copy.copy()
+        q_agent.q_values_from_policy(policy)
+        
+        while not self.events["stop"].is_set():
+            # Checks whether we triggered termination of current MDP
+            if self.events["next_mdp"].value == "next":
+                self.events["next_mdp"].clear()
+                self.reset_mdp(0)
+                break
+            
+            # sets the run speed based off keyboard input
+            if self.events["run_speed"].value > 0:
+                time.sleep(self.events["run_speed"].value)
+            self.information_parser["q_agent"] = q_agent
+
+            
+            # Current state before moving
+            current_state = self.mdp.agent.state.copy()
+            current_sensors = current_state.sensors
+            
+            # Decide the action to take
+            action = q_agent.choose_action(current_sensors)
+            
+            new_state, reward, done = self.mdp.take_action(action)
+            new_sensors = new_state.sensors
+            self.accu_reward += reward
+            
+            #This might need to be changed to "current_sensor" instead of "current_state"
+            solved = self.success_tracker.update_path(current_state)
             
             # Add the trajectory examples
             q_agent.x.add_sample(current_sensors, action, new_sensors, reward)
@@ -305,10 +387,8 @@ class Tracker():
             if done == True:
                 self.reset_mdp(reward)
         
-        solved = False; 
         policy = q_agent.policy
-        return (solved, x, policy )
-        
+        return (self.accu_reward )
                 
     def save_q_values(self):
         self.q_values_log = self.q_agent.q_values
@@ -340,7 +420,7 @@ class Tracker():
         self.logger.write_to_csv("episode_data", term_data)
         self.logger.write_to_csv("reward_data", reward_data)
         
-        self.track_success()
+        success = self.track_success()
         self.update_information_parser()
         
         # self.logger.write_to_reward_csv(data)
@@ -349,7 +429,7 @@ class Tracker():
         
         self.mdp = self.mdp_copy.copy()
         self.pg.mdp = self.mdp
-            
+        
         self.events["reset"].set()
         
     def update_information_parser(self):
@@ -382,11 +462,12 @@ class Tracker():
         if self.success_tracker.previous_path.copy() == current_path:
             self.success_tracker.path_count += 1
             if self.success_tracker.path_count < self.success_tracker.success_threshhold:
-                print(self.success_tracker.path_count)
-                print(f'Same path taken {self.success_tracker.path_count} amount of times!')
+                # print(self.success_tracker.path_count)
+                # print(f'Same path taken {self.success_tracker.path_count} amount of times!')
                 self.success_tracker.start_new_path()
             else:
-                print(f'Same route taken {self.success_tracker.success_threshhold} amount of times! optimal policy found')
+                # print(f'Same route taken {self.success_tracker.success_threshhold} amount of times! optimal policy found')
+                return True
                 # break
         else:
             self.success_tracker.path_count = 0
@@ -394,6 +475,7 @@ class Tracker():
             #print("New route taken! Success criteria reset")
 
         self.success_tracker.save_path(current_path)
+        return False
 
     
 
@@ -430,8 +512,9 @@ mdp_thread.join()
 
 # finishing off saving/loading
 logger.close_csv_files()
-logger.save_q_values_log("q_values_log.npy", tracker.q_values_log)
-logger.save_optimal_q_values("q_values_optimal.npy", tracker.optimal_policy)
+if len(tracker.q_values_log)>1 and len(tracker.optimal_policy)>1:
+    logger.save_q_values_log("q_values_log.npy", tracker.q_values_log)
+    logger.save_optimal_q_values("q_values_optimal.npy", tracker.optimal_policy)
 
 
 # Plots if wanted

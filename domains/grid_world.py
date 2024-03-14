@@ -189,7 +189,6 @@ class PygameInstance():
         
             
             player_rect = pygame.Rect(player_pos[0] * self.GRID_SIZE, player_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
-            # print(f'Player pos: {player_pos}')
             # pygame.draw.rect(screen, self.PLAYER_COLOR, player_rect)
             player_center = (player_rect.x + player_rect.width // 2, player_rect.y + player_rect.height // 2)
             pygame.draw.circle(screen, self.PLAYER_COLOR, player_center, self.GRID_SIZE // 4)
