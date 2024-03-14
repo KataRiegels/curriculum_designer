@@ -36,23 +36,36 @@ class QAgent:
         max_q_value = max(q_values)
         return max_q_value
     
-    def choose_action(self, state):
-        # Epsilon-greedy policy for action selection
+    def choose_action(self, state, action_space = None):
+        def get_keys_with_max_value(dictionary):
+            if not dictionary:
+                return []
+            max_value = max(dictionary.values())
+            return [key for key, value in dictionary.items() if value == max_value]
+                # Epsilon-greedy policy for action selection
         
         if self.use_optimal: return self.choose_policy_action(state)
         
         if random.uniform(0, 1) < self.exploration_rate:
-            action = random.choice(range(self.action_space_size))
+            # action = random.choice(range(self.action_space_size))
+            action = random.choice(action_space)
             return action
 
         else:
             # Choose the action with the highest Q-value
-            q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
-            max_q_value = max(q_values)
-            max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
+            q_values = {a: self.get_q_value(state, a) for a in action_space}
+            max_actions = get_keys_with_max_value(q_values)
+            
+            # q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
+            # max_q_value = max(q_values.values())
+            # # q_values = {a: self.get_q_value(state, a) for a in action_space}
+            
+            
+            
+            # max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
 
             # Randomly choose one of the actions with the maximum Q-value
-            chosen_action = random.choice(max_q_indices)
+            chosen_action = random.choice(max_actions)
 
             self.exploration_rate -= 0.0000001
             return chosen_action
@@ -91,12 +104,32 @@ class QAgent:
         self.q_values = {}
         self.q_values = self.q_values_from_policy(optimal_policy)
                     
-    def choose_policy_action(self, state):
-        q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
-        max_q_value = max(q_values)
-        max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
-        chosen_action = random.choice(max_q_indices)
+    def choose_policy_action(self, state, action_space):
+        def get_keys_with_max_value(dictionary):
+            if not dictionary:
+                return []
+            max_value = max(dictionary.values())
+            return [key for key, value in dictionary.items() if value == max_value]
+                # Epsilon-greedy policy for action selection
+        
+        
 
+            # Choose the action with the highest Q-value
+        q_values = {a: self.get_q_value(state, a) for a in action_space}
+        max_actions = get_keys_with_max_value(q_values)
+        
+        # q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
+        # max_q_value = max(q_values.values())
+        # # q_values = {a: self.get_q_value(state, a) for a in action_space}
+        
+        
+        
+        # max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
+
+        # Randomly choose one of the actions with the maximum Q-value
+        chosen_action = random.choice(max_actions)
+
+        self.exploration_rate -= 0.0000001
         return chosen_action
     
     @property
@@ -136,20 +169,22 @@ class QAgent:
 
 class SarsaAgent(QAgent):
     
-    def calculate_and_update_q_value(self, state, action, next_state, next_action, reward):
+    def calculate_and_update_q_value(self, state, action, next_state, next_action, reward, action_space = None):
         """Calculates q_value based on SARSA rule, and updates q_value accordingly"""
         old_q_value = self.get_q_value(state, action)
         target_q_value = reward + self.discount_factor * (self.get_q_value(next_state, next_action))
         new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
+        
         self.q_values[(state, action)] = new_q_value
         
 class QLearningAgent(QAgent):
     
     
-    def calculate_and_update_q_value(self, state, action, next_state, next_action, reward):
+    def calculate_and_update_q_value(self, state, action, next_state, next_action, reward, action_space = None):
         # Update Q-value in the Q-table
         old_q_value = self.get_q_value(state, action)
-        target_q_value = reward + self.discount_factor * max(self.get_q_value(next_state, action) for a in range(self.action_space_size))
+        # target_q_value = reward + self.discount_factor * max(self.get_q_value(next_state, action) for a in range(self.action_space_size))
+        target_q_value = reward + self.discount_factor * max(self.get_q_value(next_state, a) for a in action_space)
         new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
 
         self.q_values[(state, action)] = new_q_value

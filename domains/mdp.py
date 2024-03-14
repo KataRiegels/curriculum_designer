@@ -207,7 +207,6 @@ class Agent():
         self.state.key_distance = grid.distance_to_nearest(agent=self.state.coordinate, sensor_type='key')
         self.state.lock_distance = grid.distance_to_nearest(agent=self.state.coordinate, sensor_type='lock')
         
-        
         # Add to the state's sensors    
         self.state.key_sensor = key_sensor    
         self.state.lock_sensor = lock_sensor
@@ -319,7 +318,7 @@ class MDP(list):
         # Handles removal of key when picked up
         cell_type = self.grid.check_coordinate((new_state.coordinate))
         if cell_type == "key" and not self.agent.state.key_found:
-            self.agent.state.key_found == True
+            self.agent.state.key_found = True
             new_state.key_found = True
             self.grid.assign_cell(new_state.coordinate, None)        
         
@@ -396,7 +395,7 @@ class MDP(list):
         reward = 0
         cell_type = grid.check_coordinate((state.coordinate))
         if cell_type == "key":
-            reward == 500
+            reward = 500
         elif cell_type == "hole" :
             reward = -200
         elif cell_type == "lock" and state.key_found == True:
@@ -404,7 +403,41 @@ class MDP(list):
         else:
             reward = -10
         return reward
-        
+    
+    def get_action_space(self, state):
+        # new_state = self.agent.state.copy()
+        new_state = state
+        action_space = []
+        for action in range(4):
+            # Left
+            if action == "left" or action ==  3:
+                if not new_state.x <= 0:
+                    action_space.append(action)
+                    # action_space.append(new_state.x)
+                    # return new_state
+                # new_state.x -= 1            
+            
+            # Right
+            if action == "right" or action == 1:
+                if not new_state.x >= self.grid.width - 1:
+                    action_space.append(action)
+                #     return new_state
+                # new_state.x += 1            
+            
+            # Up
+            if action == "up" or action == 0:
+                if not new_state.y <= 0:
+                    action_space.append(action)
+                #     return new_state
+                # new_state.y -= 1            
+
+            # Down
+            if action == "down" or action == 2:
+                if not new_state.y >= self.grid.height - 1:
+                    action_space.append(action)
+                #     return new_state
+                # new_state.y += 1            
+        return action_space
     def __str__(self):
         """How the class is represented when e.g. printed"""
         string = f"MDP with:MDP number {self.random_mdp_num}  Grid size: {self.grid.size}"

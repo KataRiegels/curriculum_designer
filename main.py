@@ -37,7 +37,7 @@ if learning_alg == "QLearning":
     q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
 if learning_alg == "Sarsa":
     # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
-    q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
+    q_agent = SarsaAgent(max_training_episodes=10000, max_steps= 500000, state_space_size=(mdp.grid.height * mdp.grid.width), action_space_size=4, learning_rate=0.1, discount_factor=0.9, exploration_rate=0.2)
     # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.0)
 
 
@@ -295,17 +295,21 @@ class Tracker():
             current_state = self.mdp.agent.state.copy()
             current_sensors = current_state.sensors
             
+            current_action_space = self.mdp.get_action_space(current_state)
+            
             # Decide the action to take
-            action = q_agent.choose_action(current_sensors)
+            action = q_agent.choose_action(current_state.sensors, current_action_space)
+            
             
             new_state, reward, done = self.mdp.take_action(action)
             new_sensors = new_state.sensors
             self.accu_reward += reward
             
+            new_action_space = self.mdp.get_action_space(new_state)
             # specify new state/sensors
             if not q_agent.use_optimal:
-                next_action = self.q_agent.choose_action(new_sensors)
-                q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
+                next_action = self.q_agent.choose_policy_action(new_state.sensors, new_action_space)
+                q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward, current_action_space)
                     
             #This might need to be changed to "current_sensor" instead of "current_state"
             solved = self.success_tracker.update_path(current_state)
@@ -322,6 +326,7 @@ class Tracker():
             #             \nposition:  {current_state.position}')
 
             self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_state.sensors)
+            # print(f'current q values : {q_values}')
             # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_state.sensors)
             self.information_parser["q_values_grid"] = self.grid_matrix
             
@@ -492,7 +497,7 @@ plotting = False
 
 # determines whether or not to use saved q values
 get_q_values = True
-get_q_values = False
+# get_q_values = False
 
 
 # Initialize the tracker
