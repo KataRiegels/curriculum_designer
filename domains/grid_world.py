@@ -98,9 +98,9 @@ class PygameInstance():
                         events["reset"].set_value("policy")
                         reset()  
                     if event.key == pygame.K_1:
-                        events["run_speed"].set_value(0.5)
+                        events["run_speed"].set_value(1)
                     if event.key == pygame.K_2:
-                        events["run_speed"].set_value(0.1)
+                        events["run_speed"].set_value(0.5)
                     if event.key == pygame.K_3:
                         events["run_speed"].set_value(0.01)
                     if event.key == pygame.K_4:
@@ -130,6 +130,9 @@ class PygameInstance():
             for hole in hole_pos:
                 pygame.draw.rect(screen, self.HOLE_COLOR, (hole[0] * self.GRID_SIZE, hole[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE))
 
+            player_rect = pygame.Rect(player_pos[0] * self.GRID_SIZE, player_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
+            # pygame.draw.rect(screen, self.PLAYER_COLOR, player_rect)
+            player_center = (player_rect.x + player_rect.width // 2, player_rect.y + player_rect.height // 2)
             
             
             # for row in range(GRID_HEIGHT):
@@ -141,6 +144,21 @@ class PygameInstance():
                     # Draw the cell border
                     pygame.draw.rect(screen, self.PLAYER_COLOR, cell_rect, 1)
                     
+                    # act_col = col
+                    # act_row = row
+                    # if self.information_parser["sarsa"] == 0:
+                    #     act_col = col - 1
+                    # if self.information_parser["sarsa"] == 1:
+                    #     act_row = row + 1
+                        
+                    # if self.information_parser["sarsa"] == 2:
+                    #     act_col = col + 1
+                        
+                    # if self.information_parser["sarsa"] == 3:
+                    #     act_row = row - 1
+                        
+                    # cell_rect_action = pygame.Rect(act_col * self.GRID_SIZE, act_row * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
+                    # pygame.draw.rect(screen, (0, 200, 0), cell_rect_action, 1)
                     
 
                     # Get the Q-values for the current cell
@@ -188,12 +206,21 @@ class PygameInstance():
 
         
             
-            player_rect = pygame.Rect(player_pos[0] * self.GRID_SIZE, player_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
-            # pygame.draw.rect(screen, self.PLAYER_COLOR, player_rect)
-            player_center = (player_rect.x + player_rect.width // 2, player_rect.y + player_rect.height // 2)
             pygame.draw.circle(screen, self.PLAYER_COLOR, player_center, self.GRID_SIZE // 4)
             
-            
+            if self.information_parser["sarsa"] == 0:
+                player_rect = pygame.Rect(player_pos[0] * self.GRID_SIZE, (player_pos[1]-1) * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
+            if self.information_parser["sarsa"] == 1:
+                player_rect = pygame.Rect((player_pos[0] + 1) * self.GRID_SIZE, player_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
+                
+            if self.information_parser["sarsa"] == 2:
+                player_rect = pygame.Rect(player_pos[0] * self.GRID_SIZE, (player_pos[1] + 1) * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
+                
+            if self.information_parser["sarsa"] == 3:
+                player_rect = pygame.Rect((player_pos[0] - 1) * self.GRID_SIZE, player_pos[1] * self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)
+            player_center = (player_rect.x + player_rect.width // 2, player_rect.y + player_rect.height // 2)
+            pygame.draw.circle(screen, (0, 150,0), player_center, self.GRID_SIZE // 8)
+                
             # Writes information on the screen
             self.text_renderer( "fails", (255, 0, 0), screen, parsed = True)
             self.text_renderer( "successes", self.CHEST_COLOR, screen, parsed = True)

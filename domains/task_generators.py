@@ -14,7 +14,8 @@ def task_simplification(mdp : MDP, X = None, V = None, threshold = None):
 
     
     attempt = 0
-    while attempt < 10:
+    max_attempt = 20
+    while attempt < max_attempt:
         # Try/except due to possible generations where it tries to spawn e.g. key on pit.
         try:
             # Saves features in a copy so it can be tried again without the attempted modified features
@@ -25,10 +26,13 @@ def task_simplification(mdp : MDP, X = None, V = None, threshold = None):
             
             # Create a new MDP with the simplified feature
             new_mdp = MDP(features = mdp_features_temp)
+            
             return new_mdp
         except:
-            print("Simplification faled. Trying again")
+            print(f"simp attempt {attempt} - ", end = "")
             attempt += 1 
+    if attempt>= max_attempt:    
+        raise Exception()
             
 def option_sub_goals(old_mdp : MDP, X: X, V = None, threshold = None):
     new_mdp = old_mdp.copy()

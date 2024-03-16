@@ -57,9 +57,13 @@ class Sensors():
 
     def __str__(self):
         
-        beams = st.mean(self.beams_sensor)
-        key = st.mean(self.key_sensor)
-        lock = st.mean(self.lock_sensor)
+        # beams = st.mean(self.beams_sensor)
+        # key = st.mean(self.key_sensor)
+        # lock = st.mean(self.lock_sensor)
+        # pit = any(self.hole_sensor)
+        beams = min(self.beams_sensor)
+        key = min(self.key_sensor)
+        lock = min(self.lock_sensor)
         pit = any(self.hole_sensor)
         
         
@@ -132,7 +136,38 @@ class State():
         new_state.lock_distance = self.lock_distance
         return new_state
     
-    
+    def update_sensors(self, grid : Grid):
+        """ Updates the different agent sensors, e.g. key distance"""
+        hole_sensor = []; beams_sensor = []
+        key_sensor = [];  lock_sensor = []
+        
+        # Update sensors from each possible action
+        for action in ["up", "down", "left", "right"]:
+            # Get a state from moving
+            new_state = SA(self, action).move(grid)
+            
+            # Update sensors based off of current action
+            hole_distance = grid.is_hole_adjacent(new_state.coordinate)
+            beams_distance = grid.distance_to_nearest(agent=new_state.coordinate, sensor_type='beams')
+            key_distance = grid.distance_to_nearest(agent=new_state.coordinate, sensor_type='key')
+            lock_distance = grid.distance_to_nearest(agent=new_state.coordinate, sensor_type='lock')
+            
+            hole_sensor.append(hole_distance)
+            beams_sensor.append(beams_distance)
+            key_sensor.append(key_distance)
+            lock_sensor.append(lock_distance)
+        
+        self.hole_distance = grid.distance_to_nearest(agent=self.coordinate, sensor_type='hole')
+        self.beams_distance = grid.distance_to_nearest(agent=self.coordinate, sensor_type='beams')
+        self.key_distance = grid.distance_to_nearest(agent=self.coordinate, sensor_type='key')
+        self.lock_distance = grid.distance_to_nearest(agent=self.coordinate, sensor_type='lock')
+        
+        # Add to the state's sensors    
+        self.key_sensor = key_sensor    
+        self.lock_sensor = lock_sensor
+        self.hole_sensor = hole_sensor
+        self.beams_sensor = beams_sensor
+        
     
     def eq(self, other_state):
         """Determine if two states are equal"""
@@ -159,7 +194,7 @@ class State():
                      tuple(self.key_sensor), tuple(self.lock_sensor)))
 
     def __str__(self):
-        return (f"Position: {self.x},{self.y} ---- ")
+        return (f"Position: {self.x},{self.y}, beams: {self.beams_distance}, pit: {self.hole_distance} ---- ")
     def __repr__(self):
         return self.__str__()
     def convert_to_loadable(self, data):
@@ -230,6 +265,9 @@ def termination_key(state : State):
     
 def termination_pit(state : State):
     if (state.hole_distance == 0.0):
+        # print(f'sensors are: {state.sensors}')
+        # print(f'state is: {state}')
+        # print(f'HOLEEEEE')
         if state.key_found:
             return "holekey"
         return "hole"
@@ -250,17 +288,20 @@ class MDP(list):
     """ Class that represents an episodic Markov Decision Process, aka "task" """
     
     def copy(self):
-        return copy.deepcopy(self)
+        mdp_copy = copy.deepcopy(self)
+        return mdp_copy
     
-    def __init__(self, init_state = None, features : Features = None, run_with_print = False, terminations = []):
+    def __init__(self, init_state = None, features : Features = None, terminations = [], run_with_print = False):
+        
         
         # set the initial state
         if    init_state == None: self.init_state = State()
         else:                     self.init_state = init_state
         self.agent = Agent(self.init_state)
         
-        self.mdp_ended = False; self.term_cause = "nothing"; self.interaction_number = 0
+        self.init_attributes = [self.init_state.copy(), features, terminations.copy()]
 
+        self.mdp_ended = False; self.term_cause = "nothing"; self.interaction_number = 0
 
         # MDP termination things
         self.terminations = terminations
@@ -277,27 +318,34 @@ class MDP(list):
         
         # initialize mdp agent
         
-        
+        self.target_task = None
         
         self.run_with_print = run_with_print    
         
         # features
-        if features == None:
-            self.features = [self.grid_size, self.test_feat]
-        else: 
-            self.features = features
-            self.features.mdp = self
-            if run_with_print:
-                self.features.run_with_print = True
+        self.features = features
+        # self.features.mdp = self
+        if run_with_print:
+            self.features.run_with_print = True
         self.attach_features()
         
         
         
         self.random_mdp_num = rand.randint(0, 100)
+        # self.initial_mdp = self.copy()
+        
+            
+    def reset_mdp(self):
+        init_mdp = MDP(init_state=self.init_attributes[0], features=self.init_attributes[1], terminations=self.init_attributes[2])
+        init_mdp.target_task = self.target_task
+        return init_mdp
+        # initial_mdp_copy = self.initial_mdp.copy()
+        # print(f'Resetting MDP with {initial_mdp_copy}')
+        # return initial_mdp_copy
     
     def update_state(self):
         """Updates every run_mdp loop"""
-        self.agent.update_sensors(self.grid)
+        self.agent.state.update_sensors(self.grid)
         self.interaction_number += 1
     
     def attach_features(self):
@@ -306,14 +354,16 @@ class MDP(list):
         self.grid.add_object(HoleObj(self.features[Hole().get_feature_name()].width, exists = self.features[Hole().get_feature_name()].exists))
         self.grid.add_object(KeyObj(exists = True))
         self.grid.add_object(LockObj(exists = True))
-        self.agent.update_sensors(self.grid)
+        self.agent.state.update_sensors(self.grid)
         # self.features.run_dependencies()
     
     def P(self, state : State, action : str) -> list[tuple[State, float]] :# transition function
         """ Transition function """
-        sa        = SA(state, action)
-        new_state = state.copy()
-        new_state   = sa.move(self.grid)
+        new_state = self.move(state, action)
+        
+        # sa        = SA(state, action)
+        # new_state = state.copy()
+        # new_state   = sa.move(self.grid)
         
         # Handles removal of key when picked up
         cell_type = self.grid.check_coordinate((new_state.coordinate))
@@ -334,6 +384,7 @@ class MDP(list):
 
     def take_action(self, action):
         """Handles all the things related to taking an action for an MDP"""
+        
         reward     = self.R(self.agent.state, action)
         next_state = self.P(self.agent.state, action)[0][0]
         done       = self.mdp_ended
@@ -358,6 +409,7 @@ class MDP(list):
             for term_state in self.terminal_states:
                 if state.sensors == term_state:
                     self.end_mdp(str(state))
+                    return
                     
         # Runs the general termination states
         for func in self.terminations:
@@ -374,10 +426,12 @@ class MDP(list):
     
     def R(self, state : State, action : str, values = None) -> float:
         """ Reward function """
-        sa        = SA(state, action)
-        new_state = state.copy()
+        # sa        = SA(state, action)
+        # new_state = state.copy()
+        new_state = self.move(state, action)
         
-        new_state   = sa.move(self.grid)
+        
+        # new_state   = sa.move(self.grid)
         reward = 0
         
         # Checks for possible given terminal states outside the basic pit and lock
@@ -404,6 +458,37 @@ class MDP(list):
             reward = -10
         return reward
     
+    def move(self, state, action) -> State:
+        """ Returns a new state from movement - checks mdp boundaries """
+        new_state = state.copy()
+        # Left
+        if action == "left" or action ==  3:
+            if new_state.x <= 0:
+                return new_state
+            new_state.x -= 1            
+        
+        # Right
+        if action == "right" or action == 1:
+            if new_state.x >= self.grid.width - 1:
+                return new_state
+            new_state.x += 1            
+        
+        # Up
+        if action == "up" or action == 0:
+            if new_state.y <= 0:
+                return new_state
+            new_state.y -= 1            
+
+        # Down
+        if action == "down" or action == 2:
+            if new_state.y >= self.grid.height - 1:
+                return new_state
+            new_state.y += 1            
+        
+        # if action ==''
+        new_state.update_sensors(self.grid)
+        return new_state
+    
     def get_action_space(self, state):
         # new_state = self.agent.state.copy()
         new_state = state
@@ -413,34 +498,24 @@ class MDP(list):
             if action == "left" or action ==  3:
                 if not new_state.x <= 0:
                     action_space.append(action)
-                    # action_space.append(new_state.x)
-                    # return new_state
-                # new_state.x -= 1            
             
             # Right
             if action == "right" or action == 1:
                 if not new_state.x >= self.grid.width - 1:
                     action_space.append(action)
-                #     return new_state
-                # new_state.x += 1            
-            
             # Up
             if action == "up" or action == 0:
                 if not new_state.y <= 0:
                     action_space.append(action)
-                #     return new_state
-                # new_state.y -= 1            
 
             # Down
             if action == "down" or action == 2:
                 if not new_state.y >= self.grid.height - 1:
                     action_space.append(action)
-                #     return new_state
-                # new_state.y += 1            
         return action_space
     def __str__(self):
         """How the class is represented when e.g. printed"""
-        string = f"MDP with:MDP number {self.random_mdp_num}  Grid size: {self.grid.size}"
+        string = f"MDP: # {self.random_mdp_num} - size({self.grid.size}) - pit({self.grid.hole}) - Mt: ({self.target_task})"
         return string
 
     def __repr__(self):
@@ -480,4 +555,5 @@ class SA():
             new_state.y += 1            
         
         # if self.action ==''
+        # new_state.update_sensors(grid)
         return new_state

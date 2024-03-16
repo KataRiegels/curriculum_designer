@@ -1,6 +1,7 @@
 from __future__ import annotations
 from mdp import *
 import random as rand
+import copy
 import math
 
 class Features(dict):
@@ -60,6 +61,9 @@ class Features(dict):
         """ Returns a copy of itself """
         copied_feats = Features(list(self.values()), run_with_print=self.run_with_print)
         return copied_feats
+
+    def copy(self):
+        return copy.deepcopy(self)
 
 """ A sort of interface to ensure all Feature contain necessary functions"""
 class Feature():
@@ -143,8 +147,8 @@ class Hole(Feature):
                 return True
         return False            
     
-    pass
 
+        
 class GridSize(Feature):
     """ The grid size feature """
     

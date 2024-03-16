@@ -20,7 +20,6 @@ class X(list):
         for sample in self:
             if sample.old_state:
                 states.add(sample.old_state)
-        print(f'the states')
         return states
 
 

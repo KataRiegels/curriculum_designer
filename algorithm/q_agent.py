@@ -92,12 +92,12 @@ class QAgent:
 
     def q_values_from_policy(self, policy):
         q_values = {}
-        if self.use_optimal:
-            for state, optimal_action in policy.items():
-                for action in range(self.action_space_size):
-                    q_value = 1.0 if action == optimal_action else 0.0  # Set Q-value to 1 for optimal action, 0 otherwise
-                    # return q_value
-                    q_values[(state, action)] = q_value
+        # if self.use_optimal:
+        for state, optimal_action in policy.items():
+            for action in range(self.action_space_size):
+                q_value = 1.0 if action == optimal_action else 0.0  # Set Q-value to 1 for optimal action, 0 otherwise
+                # return q_value
+                q_values[(state, action)] = q_value
         return q_values
 
     def set_q_values_from_policy(self, optimal_policy):

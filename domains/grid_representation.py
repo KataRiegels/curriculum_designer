@@ -39,18 +39,18 @@ class Grid():
     lock_cells = []
     
     # Structure here to make it faster to look for certain cell types
-    objects_dict = {
-        "hole" : [],
-        "beams" : [],
-        "key" : [],
-        "lock" : [],
-    }
     
     def __init__(self, size = (10,10)):
         self.size = size
         
         # Initialize all Cells
         self.cells = [[Cell(x, y) for y in range(self.size[0])] for x in range(self.size[1])]
+        self.objects_dict = {
+            "hole" : [],
+            "beams" : [],
+            "key" : [],
+            "lock" : [],
+        }
 
 
    
@@ -153,7 +153,8 @@ class HoleObj():
         self.end_y = y + math.floor(self.height/2)
         
         # remove 1 coordinate step if the hole is even sized 
-        if self.is_height_even(): self.end_y -= 1
+        # if self.is_height_even(): self.end_y -= 1
+        if self.is_width_even(): self.end_x -= 1
         
         # calculate all the coordinates
         x_values = range(self.start_x, self.end_x + 1)  
@@ -182,7 +183,16 @@ class HoleObj():
         even = self.height % 2 == 0
         return even
 
+    def __str__(self):
+        if self.exists:
+            returner = f' w {self.width}'
+        else:
+            returner = f'no pit'
+        # returner = f'{self.exists}'
+        return returner
 
+    def __repr__(self):
+        return self.__str__()
 class BeamsObj():
     """Class for representing pit beams on the Grid"""
     
