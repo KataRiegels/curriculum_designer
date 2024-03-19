@@ -6,7 +6,7 @@ import os
 path = os.path.abspath("domains"); sys.path.append(path)
 path = os.path.abspath("algorithm"); sys.path.append(path)
 import threading
-from algorithm import QLearningAgent,QAgent,  Policy, SarsaAgent, SuccessTracker
+from algorithm import QLearningAgent, QAgent, Policy, SarsaAgent, SuccessTracker, tile_code
 from domains import *
 from helpers import *
 import time
@@ -15,6 +15,7 @@ import pandas as pd
 import random
 import matplotlib.pyplot as plt
 from logger import Plotter, Logger, CsvManager
+import numpy as np
 
 # stop_event = threading.Event()
 # # events["reset"] = threading.Event()
@@ -37,11 +38,15 @@ old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = old_mdp
 # mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
 
+#State space with feature range of 0-10
+state_space_ranges = np.array([[0, 20], [0, 20], [0, 20], [0, 20]])
+tile_coder = tile_code.TileCoder(10, 3, state_space_ranges)
 learning_alg = "QLearning"
 # learning_alg = "Sarsa"12q
 
 if learning_alg == "QLearning":
     q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
+
 if learning_alg == "Sarsa":
     # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
     q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
@@ -131,18 +136,23 @@ class Tracker():
             # Current state before moving
             current_state = self.mdp.agent.state.copy()
             current_sensors = current_state.sensors
+            print(f"CURRENT STATE: {current_sensors}")
+            encoded_current_sensors = tile_coder.encode(current_sensors)
+            print(f"ENCODED CURRENT SENSOR: {encoded_current_sensors}")
             
             # Decide the action to take
-            action = q_agent.choose_action(current_sensors)
+            action = q_agent.choose_action(encoded_current_sensors)
             
             new_state, reward, done = self.mdp.take_action(action)
             new_sensors = new_state.sensors
+            encoded_new_sensors = tile_coder.encode(new_sensors)
             self.accu_reward += reward
             
             # specify new state/sensors
             if not q_agent.use_optimal:
-                next_action = self.q_agent.choose_action(new_sensors)
-                q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward)
+                next_action = self.q_agent.choose_action(encoded_new_sensors)
+                q_agent.calculate_and_update_q_value(encoded_current_sensors, action, encoded_new_sensors, next_action, reward)
+                #q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action)
                     
             #This might need to be changed to "current_sensor" instead of "current_state"
             self.success_tracker.update_path(current_state)

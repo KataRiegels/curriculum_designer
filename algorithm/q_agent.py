@@ -11,6 +11,7 @@ class QAgent:
             self.q_values = {}
         else:
             self.q_values = previous_q_values
+
         self.max_training_episodes = max_training_episodes; self.max_steps = max_steps; self.state_space_size = state_space_size
         self.action_space_size = action_space_size; self.learning_rate = learning_rate; self.discount_factor = discount_factor
         self.exploration_rate = exploration_rate
@@ -146,8 +147,9 @@ class SarsaAgent(QAgent):
         
 class QLearningAgent(QAgent):
     
-    
+
     def calculate_and_update_q_value(self, state, action, next_state, next_action, reward):
+        """Calculates q_value based on standard Q-learning rules, and updates both the q_value and the weights of the tiles"""
         # Update Q-value in the Q-table
         old_q_value = self.get_q_value(state, action)
         target_q_value = reward + self.discount_factor * max(self.get_q_value(next_state, action) for a in range(self.action_space_size))

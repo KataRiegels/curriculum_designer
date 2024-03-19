@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from grid_representation import *
 from features import *
 import random as rand
@@ -171,7 +170,8 @@ class State():
         state_logger =        (self.x, self.y, self.key_found, tuple(self.hole_sensor), tuple(self.beams_sensor),
                      tuple(self.key_sensor), tuple(self.lock_sensor))
         return state_logger
-    
+
+
     
 class Agent():
     """ The agent that needs to solve the task"""
@@ -211,8 +211,8 @@ class Agent():
         self.state.lock_sensor = lock_sensor
         self.state.hole_sensor = hole_sensor
         self.state.beams_sensor = beams_sensor
-        
-    
+
+
     @property
     def coordinate(self):
         return (self.state.x, self.state.y)
@@ -413,7 +413,7 @@ class MDP(list):
         reward = 0
         cell_type = grid.check_coordinate((state.coordinate))
         if cell_type == "key":
-            reward == 500
+            reward = 500
         elif cell_type == "hole" :
             reward = -200
         elif cell_type == "lock" and state.key_found == True:
