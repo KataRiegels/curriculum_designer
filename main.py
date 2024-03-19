@@ -11,6 +11,8 @@ from domains import *
 from helpers import *
 import time
 import csv
+import statistics as st
+
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
@@ -24,7 +26,7 @@ events = Events({"stop" : CustomEvent(),
                     })
 
 # creates target task and simplified version
-feature_vector = Features(GridSize(8,8), Hole(exists = True))
+feature_vector = Features(GridSize(10,10), Hole(exists = True))
 # old_mdp = MDP(features = feature_vector, run_with_print=True, terminations = [termination_pit])
 old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = old_mdp
@@ -37,12 +39,12 @@ if learning_alg == "QLearning":
     q_agent = QLearningAgent(10000, 5000000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.1)
 if learning_alg == "Sarsa":
     # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.2)
-    q_agent = SarsaAgent(max_training_episodes=10000, max_steps= 500000, state_space_size=(mdp.grid.height * mdp.grid.width), action_space_size=4, learning_rate=0.1, discount_factor=0.9, exploration_rate=0.2)
+    q_agent = SarsaAgent(max_training_episodes=10000, max_steps= 500000, state_space_size=(mdp.grid.height * mdp.grid.width), action_space_size=4, learning_rate=0.1, discount_factor=0.9, exploration_rate=0.1)
     # q_agent = SarsaAgent(10000, 500000, (mdp.grid.height * mdp.grid.width), 4, 0.1, 0.9, 0.0)
 
 
 use_pg = False
-# use_pg = True
+use_pg = True
 
 
 
@@ -62,7 +64,7 @@ class Tracker():
         self.q_value_log_trigger = False
         
         self.mdp = mdp; self.mdp_copy = self.mdp.copy(); 
-        self.mdp_target = self.mdp.copy(); self.mdp_target.target = True
+        self.mdp_target = self.mdp.copy(); self.mdp_target.target_task = True
         self.mdp_target_clean = self.mdp_target.copy()
         q_values_dummy = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
         self.grid_matrix = [[q_values_dummy for _ in range(self.mdp.grid.width)] for _ in range(self.mdp.grid.height)]
@@ -91,6 +93,7 @@ class Tracker():
     
     def generate_curriculum(self, target_mdp : MDP, policy, beta, delta, epsilon):
         target_mdp.target_task = True
+        target_mdp.task_type = "Target"
         print(f'TARGET MDP: {target_mdp}')
         curriculum : list[MDP]= []
         while not self.events["stop"].is_set(): 
@@ -109,7 +112,7 @@ class Tracker():
             policy = new_policy
             if self.evaluate(target_mdp, policy) > delta:
                 print(f'Curriculum done! {curriculum}')
-                self.events["stop"].set()
+                # self.events["stop"].set()
                 break
         return (policy, curriculum)
         
@@ -132,7 +135,7 @@ class Tracker():
             self.enqueue(curriculum, mdp)
             return (new_policy, curriculum)
         # 6
-        source_tasks = self.create_source_tasks(mdp, x)
+        source_tasks = self.create_source_tasks(mdp, x, self.q_agent.learned_values)
         # 7 - 8
         p = []; u = []
         # 9 - 16
@@ -217,28 +220,29 @@ class Tracker():
 
         return best_policy, best_mdp, best_score
 
-    def create_source_tasks(self, mdp : MDP, x) -> list[MDP]:
-        """Creates a set of source tasks"""
-        source_task_set = []
-        # How many source tasks to create?
-        for _ in range(1):
-            source_task = self.create_source_task(mdp, x)
-            source_task_set.append(source_task)
-        return source_task_set
 
     def enqueue(self, curriculum, mdp):
         curriculum.append(mdp)
-        pass
+    
+    def create_source_tasks(self, mdp : MDP, x, v = None) -> list[MDP]:
+        """Creates a set of source tasks"""
+        source_task_set = []
+        # How many source tasks to create?
+        for _ in range(3):
+            source_task = self.create_source_task(mdp, x, v)
+            source_task_set.append(source_task)
+        return source_task_set
 
-    def create_source_task(self, mdp, x):
+    def create_source_task(self, mdp, x, v = None):
         # source_task_generators = [task_simplification, option_sub_goals]
-        source_task_generators = [task_simplification]
-        # source_task_generators = [option_sub_goals]
+        # source_task_generators = [task_simplification]
+        source_task_generators = [option_sub_goals]
         generator_choice = random.choice(source_task_generators)
-        
+        print(f'source task type: {generator_choice}')
         # source_mdp = task_simplification(self.mdp)
-        threshold = 1
-        source_mdp = generator_choice(mdp, X = x, V = self.q_agent_target.learned_values, threshold = threshold)
+        threshold = 200
+        # source_mdp = generator_choice(mdp, X = x, V = self.q_agent.learned_values, threshold = threshold)
+        source_mdp = generator_choice(mdp, X = x, V = v , threshold = threshold)
         source_mdp.target_task = False
         return source_mdp
     
@@ -246,9 +250,27 @@ class Tracker():
         """ Threading function -  runs learn"""
         # Run the learning agent
         
-        self.generate_curriculum(target_mdp=self.mdp_target,policy = Policy(), beta= 5000, delta= 600, epsilon=5)
-        print(f'')
+        run_num = 3
         
+        curriculum_generations = []
+        for i in range(run_num):
+            self.generate_curriculum(target_mdp=self.mdp_target,policy = Policy(), beta= 5000, delta= 600, epsilon=5)
+            print(f'Curriculum generations: {self.generation}')
+            curriculum_generations.append(self.generation)
+            self.generation = 0
+            
+        print(f'avg curriculum: {st.mean(curriculum_generations)}')
+
+        non_curr_generations = []
+        for i in range(run_num):
+            while True:
+                solved, x, policy = self.learn(self.q_agent_copy.copy(), self.mdp_target.copy(), beta = 500000000)
+                if solved or self.events["stop"].is_set(): break
+            non_curr_generations.append(self.generation)
+            print(f'gen donee')
+            self.generation = 0
+        print(f'avg basic: {st.mean(non_curr_generations)}')
+            
         
         # self.learn(self.q_agent_target, self.mdp_target.copy())
         
@@ -262,6 +284,7 @@ class Tracker():
         #         self.learn(self.q_agent_copy.copy(), source_mdp)
         #     elif self.events["mdp_type"].value == "optimal":
         #         self.run_with_policy()
+        self.events["stop"].set()
     
     def learn(self, q_agent : QAgent, mdp = None, policy = None, beta = 50000000):
         self.accu_reward = 0; self.mdp = mdp; 
@@ -479,7 +502,7 @@ class Tracker():
             if self.success_tracker.path_count < self.success_tracker.success_threshhold:
                 self.success_tracker.start_new_path()
             else:
-                # print(f'Same route taken {self.success_tracker.success_threshhold} amount of times! optimal policy found')
+                print(f'Same route taken {self.success_tracker.success_threshhold} amount of times! optimal policy found')
                 return True
         else:
             self.success_tracker.path_count = 0

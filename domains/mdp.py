@@ -319,6 +319,7 @@ class MDP(list):
         # initialize mdp agent
         
         self.target_task = None
+        self.task_type = None
         
         self.run_with_print = run_with_print    
         
@@ -338,6 +339,7 @@ class MDP(list):
     def reset_mdp(self):
         init_mdp = MDP(init_state=self.init_attributes[0], features=self.init_attributes[1], terminations=self.init_attributes[2])
         init_mdp.target_task = self.target_task
+        init_mdp.task_type = self.task_type
         return init_mdp
         # initial_mdp_copy = self.initial_mdp.copy()
         # print(f'Resetting MDP with {initial_mdp_copy}')
@@ -515,7 +517,7 @@ class MDP(list):
         return action_space
     def __str__(self):
         """How the class is represented when e.g. printed"""
-        string = f"MDP: # {self.random_mdp_num} - size({self.grid.size}) - pit({self.grid.hole}) - Mt: ({self.target_task})"
+        string = f"MDP: (((# {self.random_mdp_num} - size({self.grid.size}) - pit({self.grid.hole}) - type: ({self.task_type}) )))"
         return string
 
     def __repr__(self):

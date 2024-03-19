@@ -26,6 +26,7 @@ def task_simplification(mdp : MDP, X = None, V = None, threshold = None):
             
             # Create a new MDP with the simplified feature
             new_mdp = MDP(features = mdp_features_temp)
+            new_mdp.task_type = "simp"
             
             return new_mdp
         except:
@@ -39,6 +40,7 @@ def option_sub_goals(old_mdp : MDP, X: X, V = None, threshold = None):
     (terminal_states, rewards) = find_high_value_states(old_mdp, X, V, threshold)
     new_mdp.specific_reward_values = rewards
     new_mdp.terminal_states = terminal_states
+    new_mdp.task_type = "OSG"
     return new_mdp
 
 def find_options():
