@@ -6,7 +6,7 @@ import os
 path = os.path.abspath("domains"); sys.path.append(path)
 path = os.path.abspath("algorithm"); sys.path.append(path)
 import threading
-from algorithm import QLearningAgent,QAgent,  Policy, SarsaAgent, SuccessTracker
+from algorithm import QLearningAgent,QAgent,  Policy, SarsaAgent, SuccessTracker, tile_code
 from domains import *
 from helpers import *
 import time
@@ -31,6 +31,8 @@ feature_vector = Features(GridSize(10,10), Hole(exists = True))
 old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = old_mdp
 # mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
+
+#tile_coder = tile_code.TileCoder
 
 learning_alg = "QLearning"
 learning_alg = "Sarsa"
