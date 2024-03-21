@@ -12,7 +12,7 @@ from helpers import *
 import time
 import csv
 import statistics as st
-
+import numpy as np
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
@@ -32,7 +32,9 @@ old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = old_mdp
 # mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
 
-#tile_coder = tile_code.TileCoder
+#17 sensors with a feature range of 0-20 or 0-1 if boolean
+state_space_ranges = np.array([[0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 1]])
+tile_coder = tile_code.TileCoder(10, 3, state_space_ranges)
 
 learning_alg = "QLearning"
 learning_alg = "Sarsa"
@@ -314,7 +316,12 @@ class Tracker():
             # Current state before moving
             current_state = self.mdp.agent.state.copy()
             current_sensors = current_state.sensors
-            
+
+            encoded_current_state = tile_coder.encode(current_state)
+            print(f"CURRENT STATE: {current_state}")
+            #print(f"ENCODED CURRENT STATE: {encoded_current_state}")
+            #print(f"CURRENT SENSORS: {current_sensors}")
+            #print(f"ENCODED CURRENT SENSORS: {encoded_current_state}")
             current_action_space = self.mdp.get_action_space(current_state)
             # Decide the action to take
             action = q_agent.choose_action(current_state.sensors, current_action_space)
