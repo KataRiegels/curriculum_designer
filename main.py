@@ -319,8 +319,9 @@ class Tracker():
 
             encoded_current_state = tile_coder.encode(current_state)
             print(f"CURRENT STATE: {current_state}")
-            #print(f"ENCODED CURRENT STATE: {encoded_current_state}")
-            #print(f"CURRENT SENSORS: {current_sensors}")
+            print(f"ENCODED CURRENT STATE: {encoded_current_state}")
+            print(f"CURRENT SENSORS: {current_sensors}")
+            print(" ")
             #print(f"ENCODED CURRENT SENSORS: {encoded_current_state}")
             current_action_space = self.mdp.get_action_space(current_state)
             # Decide the action to take
