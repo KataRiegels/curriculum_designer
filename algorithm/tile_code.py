@@ -29,32 +29,3 @@ class TileCoder:
             #print(f"ENCODED STATE: {encoded_sensors}")
 
         return encoded_sensors
-
-#BLACKBOX AI
-    # def encode(self, state):
-    #     """Takes a state and encodes it based on tile coding - Returns a Sensor object"""
-    #     hole_sensor, beams_sensor, key_sensor, lock_sensor = state.hole_sensor, state.beams_sensor, state.key_sensor, state.lock_sensor
-    #
-    #     for tiling in range(self.num_tilings):
-    #         tiling_sensor_readings = []
-    #         for sensor_reading in [hole_sensor[tiling], beams_sensor[tiling], key_sensor[tiling], lock_sensor[tiling]]:
-    #             sensor_reading = (sensor_reading)
-    #             tiling_sensor_readings.append(self.get_tile_index(tiling, sensor_reading))
-    #         encoded_sensors = Sensors(state.key_found, tiling_sensor_readings, tiling_sensor_readings, tiling_sensor_readings, tiling_sensor_readings)
-    #
-    #     return encoded_sensors
-
-    #
-    # def encode(self, state):
-    #     """Takes a state and encodes it based on tile coding - Returns a Sensor object"""
-    #     hole_sensor, beams_sensor, key_sensor, lock_sensor = state.hole_sensor, state.beams_sensor, state.key_sensor, state.lock_sensor
-    #
-    #     for tiling in range(self.num_tilings):
-    #         tiling_sensor_readings = []
-    #         for sensor_reading in [hole_sensor, beams_sensor, key_sensor, lock_sensor]:
-    #             sensor_reading = (sensor_reading[tiling]) # Assuming each sensor has a reading for each tiling
-    #             tiling_sensor_readings.append(sensor_reading)
-    #             #print(f"ENCODED SENSOR READING {tiling_sensor_readings}")
-    #         encoded_sensors = Sensors(state.key_found, [tiling_sensor_readings[0]], [tiling_sensor_readings[1]], [tiling_sensor_readings[2]], [tiling_sensor_readings[3]])
-    #
-    #     return encoded_sensors
