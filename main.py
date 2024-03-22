@@ -13,7 +13,7 @@ from helpers import *
 import time
 import csv
 import statistics as st
-
+import numpy as np
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
@@ -32,6 +32,10 @@ feature_vector = Features(GridSize(10,10), Hole(exists = True))
 old_mdp = MDP(features = feature_vector, run_with_print=True)
 mdp = old_mdp
 # mdp = task_simplification(MDP(features = feature_vector, run_with_print=True))
+
+#17 sensors with a feature range of 0-20 or 0-1 if boolean
+state_space_ranges = np.array([[0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 20], [0, 1]])
+tile_coder = tile_code.TileCoder(10, 4, state_space_ranges)
 
 learning_alg = "QLearning"
 learning_alg = "Sarsa"
@@ -219,7 +223,7 @@ class Tracker():
                     # print(f'in policy: {state}', end = "")
                     if state in policy_Ms:
                         # print(f'')
-                        print(f'in MS: {state}')
+                        # print(f'in MS: {state}')
                         # print(f'state exist: {state}', end = "")
                     
                         if policy[state] != policy_Ms[state]:
@@ -252,8 +256,8 @@ class Tracker():
         return source_task_set
 
     def create_source_task(self, mdp, x, v = None):
-        # source_task_generators = [task_simplification, option_sub_goals]
-        source_task_generators = [task_simplification]
+        source_task_generators = [task_simplification, option_sub_goals]
+        # source_task_generators = [task_simplification]
         # source_task_generators = [option_sub_goals]
         generator_choice = random.choice(source_task_generators)
         print(f'source task type: {generator_choice.__name__}', end = " ")
@@ -335,14 +339,21 @@ class Tracker():
             # Current state before moving
             current_state = self.mdp.agent.state.copy()
             current_sensors = current_state.sensors
-            
+
+            encoded_current_sensors = tile_coder.encode(current_state)
+            # print(f"CURRENT STATE: {current_state}")
+            # print(f"ENCODED CURRENT STATE: {encoded_current_sensors}")
+            # print(f"CURRENT SENSORS: {current_sensors}")
+            # print(" ")
+            #print(f"ENCODED CURRENT SENSORS: {encoded_current_state}")
             current_action_space = self.mdp.get_action_space(current_state)
             # Decide the action to take
-            action = q_agent.choose_action(current_state.sensors, current_action_space)
+            action = q_agent.choose_action(encoded_current_sensors, current_action_space)
             
             
             new_state, reward, done = self.mdp.take_action(action)
             new_sensors = new_state.sensors
+            encoded_new_sensors = tile_coder.encode(new_state)
             self.accu_reward += reward
             
             new_action_space = self.mdp.get_action_space(new_state)
@@ -352,24 +363,24 @@ class Tracker():
             # print(f'new action space: {new_action_space}')
             # specify new state/sensors
             if not q_agent.use_optimal:
-                next_action = self.q_agent.choose_policy_action(new_state.sensors, new_action_space)
+                next_action = self.q_agent.choose_policy_action(encoded_new_sensors, new_action_space)
                 # print(f'next action: {next_action}')
                 self.information_parser["sarsa"] = next_action
-                q_agent.calculate_and_update_q_value(current_sensors, action, new_sensors, next_action, reward, current_action_space)
+                q_agent.calculate_and_update_q_value(encoded_current_sensors, action, encoded_new_sensors, next_action, reward, current_action_space)
                     
             #This might need to be changed to "current_sensor" instead of "current_state"
             # solved = self.success_tracker.update_path(current_state)
             self.success_tracker.update_path(current_state)
             
             # Add the trajectory examples
-            q_agent.x.add_sample(current_sensors, action, new_sensors, reward)
+            q_agent.x.add_sample(encoded_current_sensors, action, encoded_new_sensors, reward)
 
             x = q_agent.x
             
-            q_values = [q_agent.get_q_value(new_sensors, a) for a in range(4)]
+            q_values = [q_agent.get_q_value(encoded_new_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
 
-            self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_state.sensors)
+            self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(encoded_new_sensors)
             self.information_parser["q_values_grid"] = self.grid_matrix
             
             # if self.mdp.mdp_ended == True:
@@ -385,7 +396,7 @@ class Tracker():
         self.reset_mdp(0)
         return (solved, x, policy )
         
-    def simulate_episode(self, mdp : MDP = None, policy = None, beta = 50000000):
+    def simulate_episode(self, mdp : MDP = None, policy = None, beta = 5000):
         self.accu_reward = 0; self.mdp = mdp.reset_mdp(); self.mdp_copy = mdp.copy(); self.pg.mdp = self.mdp
         q_agent = self.q_agent_copy.copy()
         q_agent.x = X()
@@ -395,8 +406,8 @@ class Tracker():
         solved = False
         x = X()
         # time.sleep(2)
+        while not self.events["stop"].is_set() and beta > time_steps:
 
-        while not self.events["stop"].is_set():
             # Checks whether we triggered termination of current MDP
             if self.events["next_mdp"].value == "next":
                 self.events["next_mdp"].clear()
@@ -413,13 +424,16 @@ class Tracker():
             current_state = self.mdp.agent.state.copy()
             current_sensors = current_state.sensors
             
+            encoded_current_sensors = tile_coder.encode(current_state)
+            
             current_action_space = self.mdp.get_action_space(current_state)
             # Decide the action to take
-            action = q_agent.choose_policy_action(current_state.sensors, current_action_space)
+            action = q_agent.choose_policy_action(encoded_current_sensors, current_action_space)
             
             
             new_state, reward, done = self.mdp.take_action(action)
             new_sensors = new_state.sensors
+            encoded_new_sensors = tile_coder.encode(new_state)
             
             self.accu_reward += reward
             
@@ -427,21 +441,22 @@ class Tracker():
             self.success_tracker.update_path(current_state)
             
             # Add the trajectory examples
-            q_agent.x.add_sample(current_sensors, action, new_sensors, reward)
+            q_agent.x.add_sample(encoded_current_sensors, action, encoded_new_sensors, reward)
 
             x = q_agent.x
             
-            q_values = [q_agent.get_q_value(new_sensors, a) for a in range(4)]
+            q_values = [q_agent.get_q_value(encoded_new_sensors, a) for a in range(4)]
             self.information_parser['q_values'] = q_values
             # if new_state.key_found :
             #     print(f'found the key.\nq value:  {max(q_values)}\
             #             \nposition:  {current_state.position}')
 
-            self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(new_state.sensors)
+            self.grid_matrix[new_state.x][new_state.y] = q_agent.get_q_values_for_state(encoded_new_sensors)
             # self.grid_matrix[current_state.x][current_state.y] = q_agent.get_q_values_for_state(current_state.sensors)
             self.information_parser["q_values_grid"] = self.grid_matrix
             
             # if self.mdp.mdp_ended == True:
+            time_steps += 1
 
             if done == True:
                 break
