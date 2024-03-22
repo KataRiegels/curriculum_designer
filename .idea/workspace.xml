@@ -82,7 +82,8 @@
       <workItem from="1710923949757" duration="3372000" />
       <workItem from="1711006088312" duration="6237000" />
       <workItem from="1711035716383" duration="1926000" />
-      <workItem from="1711058992216" duration="2136000" />
+      <workItem from="1711058992216" duration="2602000" />
+      <workItem from="1711096566890" duration="3375000" />
     </task>
     <servers />
   </component>
@@ -102,7 +103,7 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/curriculum_designer$main.coverage" NAME="main Coverage Results" MODIFIED="1711061144167" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/curriculum_designer$main.coverage" NAME="main Coverage Results" MODIFIED="1711098831216" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/curriculum_designer$q_learning.coverage" NAME="q-learning Coverage Results" MODIFIED="1709027779814" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/algorithm" />
     <SUITE FILE_PATH="coverage/curriculum_designer$grid_world.coverage" NAME="grid_world Coverage Results" MODIFIED="1709025801668" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/domains/grid_world" />
     <SUITE FILE_PATH="coverage/curriculum_designer$temp_run.coverage" NAME="temp_run Coverage Results" MODIFIED="1709303523699" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
