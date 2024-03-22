@@ -240,6 +240,10 @@ class PygameInstance():
             self.text_renderer(f"down: {round(q_values[2],rd)}", (0,0,0), screen, parsed = False)
             self.text_renderer(f"left: {round(q_values[3],rd)}", (0,0,0), screen, parsed = False)
             
+            for line in self.mdp.nice_print():
+                self.text_renderer(f" {line}", (0,0,0), screen, parsed = False)
+                
+            
             self.text_render_number = 0
             
             

@@ -30,7 +30,8 @@ def task_simplification(mdp : MDP, X = None, V = None, threshold = None):
             
             return new_mdp
         except:
-            print(f"simp attempt {attempt} - ", end = "")
+            if attempt > 5:
+                print(f"simp attempt {attempt} - ", end = "")
             attempt += 1 
     if attempt>= max_attempt:    
         raise Exception()
@@ -59,7 +60,8 @@ def find_high_value_states(mdp : MDP, X: X, V = None, threshold = None):
         if  value >= threshold:
             terminal_states.append(old_state)
             rewards[(old_state, action, new_state)] = value
-    return (terminal_states, rewards)
+    # print(f'terminal states: {len(terminal_states)}, reward: {len(rewards)}')
+    return (set(terminal_states), rewards)
 
 
 

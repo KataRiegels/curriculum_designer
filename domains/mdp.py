@@ -30,6 +30,14 @@ class Sensors():
             self.key_sensor == other_state.key_sensor and
             self.lock_sensor == other_state.lock_sensor
         )
+        rounder = 1
+        # eq = (
+        #     self.key_found == other_state.key_found and
+        #     self.hole_sensor == other_state.hole_sensor and
+        #     round(self.beams_sensor, rounder)  == round(other_state.beams_sensor, rounder)  and
+        #     round(self.key_sensor, rounder)  == round(other_state.key_sensor, rounder)  and
+        #     round(self.lock_sensor, rounder)  == round(other_state.lock_sensor, rounder) 
+        # )
         return eq 
 
 
@@ -181,6 +189,13 @@ class State():
             self.lock_sensor == other_state.lock_sensor
         )
 
+    def has_sensors(self, sensors : Sensors):
+        beams = self.beams_sensor == sensors.beams_sensor
+        hole = self.hole_sensor == sensors.hole_sensor
+        key = self.key_sensor == sensors.key_sensor
+        lock = self.lock_sensor == sensors.lock_sensor
+        return beams and hole and key and lock
+
     def __eq__(self, other):
         """Overwriting '==' operator"""
         if not isinstance(other, State):
@@ -194,7 +209,7 @@ class State():
                      tuple(self.key_sensor), tuple(self.lock_sensor)))
 
     def __str__(self):
-        return (f"Position: {self.x},{self.y}, beams: {self.beams_distance}, pit: {self.hole_distance} ---- ")
+        return (f"Position: {self.x},{self.y}, beams: {self.beams_distance}, pit: {self.hole_distance}, key: {self.key_distance} ---- ")
     def __repr__(self):
         return self.__str__()
     def convert_to_loadable(self, data):
@@ -297,18 +312,13 @@ class MDP(list):
         # set the initial state
         if    init_state == None: self.init_state = State()
         else:                     self.init_state = init_state
-        self.agent = Agent(self.init_state)
+        # self.agent = Agent(self.init_state)
         
         self.init_attributes = [self.init_state.copy(), features, terminations.copy()]
 
         self.mdp_ended = False; self.term_cause = "nothing"; self.interaction_number = 0
 
-        # MDP termination things
-        self.terminations = terminations
-        if len(terminations) == 0:
-            self.terminations.append(termination_pit)
-        if len(terminations) == 1:
-            self.terminations.append(termination_lock)
+  
         
         self.specific_reward_values = {} 
         self.terminal_states = None
@@ -316,6 +326,7 @@ class MDP(list):
         # Initialize the Grid
         self.grid = Grid()
         
+        self.terminations = terminations
         # initialize mdp agent
         
         self.target_task = None
@@ -328,18 +339,34 @@ class MDP(list):
         # self.features.mdp = self
         if run_with_print:
             self.features.run_with_print = True
+        # self.attach_features()
+        
+        
+        self.initialize_mdp()
         self.attach_features()
-        
-        
-        
-        self.random_mdp_num = rand.randint(0, 100)
+        self.mdp_num = rand.randint(0, 100)
         # self.initial_mdp = self.copy()
         
-            
+    def initialize_mdp(self):
+        self.agent = Agent(self.init_state)
+        # MDP termination things
+        if len(self.terminations) == 0:
+            self.terminations.append(termination_pit)
+        if len(self.terminations) == 1:
+            self.terminations.append(termination_lock)
+        pass
+    
     def reset_mdp(self):
+        # init_mdp = self.copy()
+        # init_mdp.init_state = self.init_attributes[0]; self.features = self.init_attributes[1]; self.terminations = self.init_attributes[2]
+        # init_mdp.initialize_mdp()
         init_mdp = MDP(init_state=self.init_attributes[0], features=self.init_attributes[1], terminations=self.init_attributes[2])
         init_mdp.target_task = self.target_task
         init_mdp.task_type = self.task_type
+        init_mdp.terminations = self.terminations
+        init_mdp.terminal_states = self.terminal_states
+        init_mdp.specific_reward_values = self.specific_reward_values
+        init_mdp.mdp_num = self.mdp_num
         return init_mdp
         # initial_mdp_copy = self.initial_mdp.copy()
         # print(f'Resetting MDP with {initial_mdp_copy}')
@@ -413,7 +440,7 @@ class MDP(list):
                     self.end_mdp(str(state))
                     return
                     
-        # Runs the general termination states
+        # Runs the general termination statess
         for func in self.terminations:
             term_cause = func(state)
             if term_cause:
@@ -515,13 +542,61 @@ class MDP(list):
                 if not new_state.y >= self.grid.height - 1:
                     action_space.append(action)
         return action_space
+    
+    def get_achievable_states(self, state: State) -> list[State]:
+        """
+        Get a list of states achievable from the given state in the given MDP.
+
+        Args:
+        - mdp (MDP): The Markov Decision Process.
+        - state (State): The current state.
+
+        Returns:
+        - list[State]: A list of states achievable from the current state.
+        """
+        achievable_states = []
+
+        # Get the action space for the current state
+        action_space = self.get_action_space(state)
+
+        # Iterate over each action in the action space
+        for action in action_space:
+            # Take the action to get the next state
+            next_state = self.move(state, action)
+            achievable_states.append(next_state.sensors)
+
+        return achievable_states
+        
+    def visit_all_states(self):
+        set_of_sensors = set()
+        
+        width, height = self.grid.size
+        
+        for x in range(width):
+            for y in range(height):
+                state = State(x,y)
+                state.update_sensors(self.grid)
+                set_of_sensors.add(state.sensors)
+                # Do something with the position (x, y)
+        
+        return set_of_sensors
+    
+    def nice_print(self):
+        string = [f"# {self.mdp_num}", f'size({self.grid.size})',  f'pit({self.grid.hole})', f' type: ({self.task_type})']
+        return string
+        
+    
     def __str__(self):
         """How the class is represented when e.g. printed"""
-        string = f"MDP: (((# {self.random_mdp_num} - size({self.grid.size}) - pit({self.grid.hole}) - type: ({self.task_type}) )))"
+        string = f"MDP: (((# {self.mdp_num} - size({self.grid.size}) - pit({self.grid.hole}) - type: ({self.task_type}) )))"
         return string
 
     def __repr__(self):
         return self.__str__()
+    
+"""
+"""
+
 class SA():
     """Not to be confused with the assault. stands for state-action"""
     def __init__(self, state : State, action):

@@ -3,6 +3,7 @@ import numpy as np
 import copy
 from policy import Policy
 from samples import *
+# from cmac import *
 
 class QAgent:
     def __init__(self, max_training_episodes, max_steps, state_space_size, action_space_size, learning_rate,
@@ -17,6 +18,8 @@ class QAgent:
         self.use_optimal = False
         self.optimal_policy = {}
         self.x = X()
+        self.cmac = CMAC(num_tilings=4, tile_width=0.2, num_tiles=8)
+        # self.cmac = CMAC()
 
 
     def get_q_value(self, state, action):
@@ -37,6 +40,7 @@ class QAgent:
         return max_q_value
     
     def choose_action(self, state, action_space = None):
+        # print(f'q agent unique states: {len(self.get_unique_states())}')
         def get_keys_with_max_value(dictionary):
             if not dictionary:
                 return []
@@ -50,9 +54,14 @@ class QAgent:
             # action = random.choice(range(self.action_space_size))
             action = random.choice(action_space)
             return action
-
+        # else:
+        #     feature_vector = self.cmac.get_tiles(state)    
+        #     q_values = {a: self.get_q_value(feature_vector, a) for a in range(self.action_space_size)}
         else:
             # Choose the action with the highest Q-value
+            tiles = self.cmac.get_tiles(state)
+            # Use the tiled representation of the state for action selection
+            # q_values = {a: self.get_q_value(tuple(tiles), a) for a in action_space}
             q_values = {a: self.get_q_value(state, a) for a in action_space}
             max_actions = get_keys_with_max_value(q_values)
             
@@ -118,14 +127,6 @@ class QAgent:
         q_values = {a: self.get_q_value(state, a) for a in action_space}
         max_actions = get_keys_with_max_value(q_values)
         
-        # q_values = [self.get_q_value(state, a) for a in range(self.action_space_size)]
-        # max_q_value = max(q_values.values())
-        # # q_values = {a: self.get_q_value(state, a) for a in action_space}
-        
-        
-        
-        # max_q_indices = [i for i, q in enumerate(q_values) if q == max_q_value]
-
         # Randomly choose one of the actions with the maximum Q-value
         chosen_action = random.choice(max_actions)
 
@@ -165,7 +166,19 @@ class QAgent:
     
     def copy(self):
         return copy.deepcopy(self)
-
+    def compute_tiles(self, state):
+        tiles = []
+        # Compute tiles for each tiling
+        for i in range(self.num_tilings):
+            tiling_offset = i * (self.tile_width / self.num_tilings)
+            tile_indices = []
+            # Compute indices for each dimension
+            for feature in [state.beams_sensor, state.key_sensor, state.lock_sensor]:
+                scaled_value = feature * self.num_tiles / self.tile_width
+                tile_index = int(scaled_value + tiling_offset)
+                tile_indices.append(tile_index)
+            tiles.append(tile_indices)
+        return tiles
 
 class SarsaAgent(QAgent):
     
@@ -188,3 +201,40 @@ class QLearningAgent(QAgent):
         new_q_value = old_q_value + self.learning_rate * (target_q_value - old_q_value)
 
         self.q_values[(state, action)] = new_q_value
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+class CMAC:
+    def __init__(self, num_tilings, tile_width, num_tiles):
+        self.num_tilings = num_tilings
+        self.tile_width = tile_width
+        self.num_tiles = num_tiles
+
+    def get_tiles(self, state):
+        # Access individual attributes of the Sensors object
+        beams_value = state.beams_sensor
+        key_value = state.key_sensor
+        lock_value = state.lock_sensor
+
+        # Perform arithmetic operations on individual attribute values
+        scaled_beams = [beam * self.num_tiles / self.tile_width for beam in beams_value]
+        scaled_lock = [beam * self.num_tiles / self.tile_width for beam in lock_value]
+        scaled_key = [beam * self.num_tiles / self.tile_width for beam in key_value]
+        # if isinstance(key_value, (int, float)):
+        #     scaled_key = key_value * self.num_tiles / self.tile_width
+        # else:
+        #     scaled_key = [key * self.num_tiles / self.tile_width for key in key_value]
+
+        # if isinstance(lock_value, (int, float)):
+        #     scaled_lock = lock_value * self.num_tiles / self.tile_width
+        # else:
+        #     scaled_lock = [lock * self.num_tiles / self.tile_width for lock in lock_value]
+        # Return the scaled values
+        return scaled_beams, scaled_key, scaled_lock

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 # from mdp import *
 
-class X(list):
+class X(set):
     
     def add_sample(self,old_state : State = None, action = None, new_state = None, reward = None ):
-        self.append(Sample(old_state, action, new_state, reward))
+        self.add(Sample(old_state, action, new_state, reward))
     
     def count_same_states(self, other: X) -> int:
         other_states = other.get_states()
@@ -22,6 +22,8 @@ class X(list):
                 states.add(sample.old_state)
         return states
 
+    def append(self, state):
+        self.add(state)
 
 class Sample:
     

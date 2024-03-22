@@ -33,7 +33,7 @@ class Features(dict):
             self[new_feature.get_feature_name()] = new_feature
         else:
             self[feature_name] = new_feature
-        if self.run_with_print: print(f'Feature modified: {new_feature.get_feature_name()}')
+        # if self.run_with_print: print(f'Feature modified: {new_feature.get_feature_name()}')
                 # Run through features to handle dependencies - e.g. hole with grid width
         # for feature in self.values():
         #     feature.run_dependencies(self)
@@ -81,7 +81,7 @@ class Feature():
     def get_feature_name(self):
         return self.feature_name
         """ All Feature types have an assigned string name - this gets said string """
-        raise Exception("No get_feature_name() function defined")
+        raise Exception("No get_feature_name() function defined") 
     
     def can_be_simplified(self) -> bool:
         raise Exception("No can_be_simplified() function defined")
