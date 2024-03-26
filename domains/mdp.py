@@ -9,11 +9,11 @@ import copy
 
 class Sensors():
     """ Class that essentially just keeps the sensor part of a state"""
-    def __init__(self, key_found,
-            hole_sensor ,
-            beams_sensor ,
-            key_sensor ,
-            lock_sensor ):
+    def __init__(self, key_found = None,
+            hole_sensor = None,
+            beams_sensor = None ,
+            key_sensor = None,
+            lock_sensor = None):
         self.key_found = key_found
         self.hole_sensor = hole_sensor
         self.beams_sensor = beams_sensor

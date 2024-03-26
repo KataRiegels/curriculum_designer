@@ -341,6 +341,8 @@ class Tracker():
             current_sensors = current_state.sensors
 
             encoded_current_sensors = tile_coder.encode(current_state)
+            test = tile_coder.generate_feature_vector(current_sensors)
+            print(f'features: {test}')
             # print(f"CURRENT STATE: {current_state}")
             # print(f"ENCODED CURRENT STATE: {encoded_current_sensors}")
             # print(f"CURRENT SENSORS: {current_sensors}")

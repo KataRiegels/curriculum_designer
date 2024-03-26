@@ -102,7 +102,7 @@ class Grid():
             min_distance = min(min_distance, distance)
 
 
-        return round(min_distance, 0)
+        return round(min_distance, 1)
         return math.ceil(min_distance)
  
     def is_hole_adjacent(self, coordinate):
